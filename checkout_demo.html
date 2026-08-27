@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexus Terminal — Institutional Grade AI</title>
+<meta name="description" content="Nexus Terminal: Institutional-grade agentic checkout with cryptographic mandates, AP2 authorization, and UPI delegation."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050a18;--bg2:#0a1020;--bg3:#0f1a2e;
+  --indigo:#6366f1;--violet:#8b5cf6;--emerald:#10b981;--amber:#f59e0b;--rose:#f43f5e;--sky:#38bdf8;--cyan:#06b6d4;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#475569;
+  --card-bg:rgba(10,18,40,0.75);--card-border:rgba(99,102,241,0.18);
+  --font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden}
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ── SCROLLBARS ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(99,102,241,0.3);border-radius:3px}
+
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);transition:opacity .6s,visibility .6s}
+#login-screen.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.login-card{background:rgba(10,18,40,0.88);border:1px solid rgba(99,102,241,0.32);backdrop-filter:blur(28px);border-radius:16px;padding:40px 44px;width:440px;box-shadow:0 0 90px rgba(99,102,241,0.13),0 32px 64px rgba(0,0,0,0.55);position:relative;z-index:1}
+.login-logo{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:6px}
+.logo-hex{width:42px;height:42px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.login-title{font-size:22px;font-weight:800;letter-spacing:.05em;color:#fff}
+.login-subtitle{text-align:center;color:var(--text2);font-size:12px;margin-bottom:28px;letter-spacing:.1em}
+.field-label{font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;margin-bottom:6px}
+.field-wrap{position:relative;margin-bottom:18px}
+.field-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px}
+.login-input{width:100%;background:rgba(15,23,42,0.8);border:1px solid rgba(99,102,241,0.2);border-radius:8px;padding:12px 14px 12px 40px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .2s}
+.login-input:focus{border-color:var(--indigo)}
+.btn-auth-main{width:100%;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:8px;padding:14px;color:#fff;font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.04em;margin-bottom:16px;transition:all .2s}
+.btn-auth-main:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(99,102,241,0.4)}
+.btn-auth-main.loading{opacity:.8;pointer-events:none}
+.btn-sso{width:100%;background:transparent;border:1px solid rgba(148,163,184,0.2);border-radius:8px;padding:11px;color:var(--text2);font-family:var(--font);font-size:13px;cursor:pointer;margin-bottom:8px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-sso:hover{border-color:rgba(99,102,241,0.4);color:var(--text)}
+.ap2-node{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:18px;color:var(--text2);font-size:12px}
+.ndot{width:7px;height:7px;background:var(--emerald);border-radius:50%;animation:pulse 2s infinite}
+.login-footer{position:absolute;bottom:0;left:0;right:0;padding:16px 32px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(148,163,184,0.05)}
+.footer-left{font-size:10px;color:var(--text3);letter-spacing:.04em}
+.footer-links{display:flex;gap:16px}
+.footer-links a{font-size:10px;color:var(--text3);text-decoration:none;transition:color .2s}
+.footer-links a:hover{color:var(--text2)}
+
+/* ── MAIN APP ── */
+#main-app{display:none;flex-direction:column;height:100vh;position:relative;z-index:1;opacity:0;transition:opacity .5s}
+#main-app.visible{display:flex;opacity:1}
+
+/* ── HEADER ── */
+.app-header{height:52px;background:rgba(5,10,24,0.96);border-bottom:1px solid var(--card-border);backdrop-filter:blur(16px);display:flex;align-items:center;padding:0 20px;gap:16px;flex-shrink:0;z-index:50}
+.header-logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;letter-spacing:.04em;color:#fff;cursor:pointer}
+.header-logo-icon{width:26px;height:26px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.header-nav{display:flex;gap:2px;margin-left:12px}
+.nav-item{padding:6px 14px;font-size:12px;color:var(--text2);cursor:pointer;border-radius:6px;transition:all .2s;font-weight:500;border:none;background:none;position:relative}
+.nav-item:hover{color:var(--text);background:rgba(99,102,241,0.1)}
+.nav-item.active{color:var(--indigo);background:rgba(99,102,241,0.08)}
+.nav-item.active::after{content:'';position:absolute;bottom:-1px;left:14px;right:14px;height:2px;background:var(--indigo);border-radius:2px 2px 0 0}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.test-badge{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);color:var(--amber);font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.08em}
+.failure-toggle-wrap{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--text2)}
+.toggle-track{width:34px;height:18px;background:rgba(148,163,184,0.2);border-radius:10px;position:relative;cursor:pointer;border:none;transition:background .2s;flex-shrink:0}
+.toggle-track.on{background:rgba(244,63,94,0.45)}
+.toggle-knob{width:13px;height:13px;background:#94a3b8;border-radius:50%;position:absolute;top:2.5px;left:2.5px;transition:all .2s}
+.toggle-track.on .toggle-knob{left:18.5px;background:var(--rose)}
+.icon-btn{width:32px;height:32px;background:rgba(148,163,184,0.06);border:1px solid rgba(148,163,184,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:14px;transition:all .2s}
+.icon-btn:hover{color:var(--text);background:rgba(99,102,241,0.1)}
+.avatar{width:32px;height:32px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;cursor:pointer}
+.notif-dot{position:absolute;top:6px;right:7px;width:6px;height:6px;background:var(--rose);border-radius:50%;border:1.5px solid var(--bg)}
+
+/* ── PAGE CONTAINER ── */
+.page-container{flex:1;overflow:hidden;position:relative}
+.page{display:none;height:100%;overflow-y:auto;padding:24px 28px;animation:fadeInUp .25s ease}
+
+/* ── CATALOG PAGE ── */
+.catalog-hero{background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.08));border:1px solid rgba(99,102,241,0.22);border-radius:12px;padding:20px 24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+.catalog-hero-left{}
+.catalog-hero-title{font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px}
+.catalog-hero-sub{font-size:12px;color:var(--text2);line-height:1.6}
+.catalog-hero-badges{display:flex;gap:8px;margin-top:10px}
+.catalog-stats{display:flex;gap:20px}
+.cstat{text-align:center}
+.cstat-num{font-size:22px;font-weight:800;color:var(--indigo)}
+.cstat-lbl{font-size:10px;color:var(--text3);margin-top:2px}
+.catalog-layout{display:grid;grid-template-columns:240px 1fr;gap:16px}
+.catalog-filters{background:rgba(10,18,40,0.7);border:1px solid var(--card-border);border-radius:12px;padding:16px;height:fit-content;position:sticky;top:0}
+.cf-title{font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;margin-bottom:10px}
+.cf-group{margin-bottom:16px}
+.cf-label{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px}
+.cf-item{display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:12px;color:var(--text2);transition:color .2s}
+.cf-item:hover{color:var(--text)}
+.cf-item input{accent-color:var(--indigo);cursor:pointer}
+.cf-price-range{display:flex;gap:8px}
+.cf-price-input{width:80px;background:rgba(15,23,42,0.8);border:1px solid rgba(148,163,184,0.15);border-radius:6px;padding:7px 10px;color:var(--text);font-size:11px;font-family:var(--mono);outline:none}
+.cf-price-input:focus{border-color:rgba(99,102,241,0.4)}
+.catalog-grid{}
+.catalog-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.catalog-count{font-size:12px;color:var(--text2)}
+.catalog-sort{background:rgba(15,23,42,0.8);border:1px solid rgba(148,163,184,0.15);border-radius:7px;padding:7px 12px;color:var(--text);font-size:12px;font-family:var(--font);outline:none;cursor:pointer}
+.catalog-sort:focus{border-color:rgba(99,102,241,0.4)}
+.catalog-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.catalog-card{background:rgba(10,18,40,0.75);border:1px solid var(--card-border);border-radius:12px;overflow:hidden;transition:all .25s;cursor:pointer}
+.catalog-card:hover{border-color:rgba(99,102,241,0.4);transform:translateY(-2px);box-shadow:0 12px 32px rgba(0,0,0,0.35)}
+.catalog-card-img{height:80px;display:flex;align-items:center;justify-content:center;font-size:36px;position:relative}
+.catalog-card-img.c-indigo{background:linear-gradient(135deg,rgba(99,102,241,0.2),rgba(139,92,246,0.1))}
+.catalog-card-img.c-emerald{background:linear-gradient(135deg,rgba(16,185,129,0.18),rgba(6,182,212,0.1))}
+.catalog-card-img.c-amber{background:linear-gradient(135deg,rgba(245,158,11,0.18),rgba(239,68,68,0.08))}
+.catalog-card-img.c-sky{background:linear-gradient(135deg,rgba(56,189,248,0.18),rgba(99,102,241,0.1))}
+.catalog-card-img.c-violet{background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(244,63,94,0.08))}
+.catalog-card-img.c-rose{background:linear-gradient(135deg,rgba(244,63,94,0.15),rgba(245,158,11,0.08))}
+.sku-badge{position:absolute;top:8px;right:8px;background:rgba(5,10,24,0.8);border:1px solid rgba(148,163,184,0.15);font-family:var(--mono);font-size:9px;color:var(--text3);padding:2px 7px;border-radius:4px}
+.catalog-card-body{padding:14px}
+.cc-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.cc-desc{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:10px}
+.cc-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.cc-tag{font-size:9px;font-weight:600;padding:2px 7px;border-radius:4px;letter-spacing:.04em}
+.cc-tag-indigo{background:rgba(99,102,241,0.15);color:var(--indigo)}
+.cc-tag-emerald{background:rgba(16,185,129,0.12);color:var(--emerald)}
+.cc-tag-amber{background:rgba(245,158,11,0.12);color:var(--amber)}
+.cc-tag-sky{background:rgba(56,189,248,0.12);color:var(--sky)}
+.cc-footer{display:flex;justify-content:space-between;align-items:center}
+.cc-price{font-size:16px;font-weight:800;color:var(--text);font-family:var(--mono)}
+.cc-per{font-size:10px;color:var(--text3);font-weight:400}
+.btn-add-cart{background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);color:var(--indigo);border-radius:7px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .2s}
+.btn-add-cart:hover{background:rgba(99,102,241,0.25)}
+.btn-add-cart.added{background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);color:var(--emerald)}
+.api-response-box{background:rgba(5,10,24,0.95);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:16px;margin-top:20px;font-family:var(--mono);font-size:11px;overflow-x:auto}
+.api-response-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.api-endpoint{color:var(--indigo);font-size:12px;font-weight:600}
+.api-status{color:var(--emerald);font-size:11px}
+.json-key{color:#f472b6}
+.json-str{color:#86efac}
+.json-num{color:#fcd34d}
+.json-bool{color:#67e8f9}
+.json-null{color:var(--text3)}
+/* UPSELL CARD */
+.upsell-card{background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(99,102,241,0.08));border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:16px;max-width:480px;margin-top:8px}
+.upsell-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.upsell-title{font-size:13px;font-weight:700;color:var(--amber)}
+.upsell-sub{font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.5}
+.upsell-items{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.upsell-item{background:rgba(10,18,40,0.8);border:1px solid rgba(148,163,184,0.1);border-radius:9px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;transition:border-color .2s}
+.upsell-item:hover{border-color:rgba(245,158,11,0.3)}
+.upsell-item-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px}
+.upsell-item-desc{font-size:10px;color:var(--text2)}
+.upsell-item-price{font-size:13px;font-weight:700;color:var(--amber);font-family:var(--mono);white-space:nowrap;margin-left:12px}
+.upsell-revenue{font-size:10px;color:var(--emerald);background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:5px;padding:2px 8px;display:inline-flex;align-items:center;gap:4px;margin-bottom:12px}
+.btn-add-upsell{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);color:var(--amber);border-radius:7px;padding:7px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .2s;white-space:nowrap}
+.btn-add-upsell:hover{background:rgba(245,158,11,0.25)}
+.btn-add-upsell.added{background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.3);color:var(--emerald);pointer-events:none}
+.btn-skip-upsell{background:transparent;border:1px solid rgba(148,163,184,0.15);color:var(--text3);border-radius:7px;padding:7px 14px;font-size:11px;cursor:pointer;font-family:var(--font);transition:all .2s;margin-left:8px}
+.btn-skip-upsell:hover{color:var(--text2);border-color:rgba(148,163,184,0.3)}
+.upsell-cart-update{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--emerald);margin-top:8px;display:none}
+.page.active{display:block}
+
+/* ── COMMON CARDS ── */
+.card{background:rgba(10,18,40,0.7);border:1px solid var(--card-border);border-radius:12px;padding:20px;backdrop-filter:blur(12px);transition:all .3s}
+.card:hover{border-color:rgba(99,102,241,0.3);box-shadow:0 0 24px rgba(99,102,241,0.06)}
+.card-title{font-size:11px;font-weight:600;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title-lg{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.flex-gap{display:flex;gap:16px}
+.badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.06em}
+.badge-green{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.35);color:var(--emerald)}
+.badge-indigo{background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.35);color:var(--indigo)}
+.badge-amber{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);color:var(--amber)}
+.badge-rose{background:rgba(244,63,94,0.15);border:1px solid rgba(244,63,94,0.35);color:var(--rose)}
+.badge-violet{background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.35);color:var(--violet)}
+.badge-sky{background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--sky)}
+.page-header{margin-bottom:22px;display:flex;justify-content:space-between;align-items:flex-start}
+.page-title{font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--text2)}
+.btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:8px;padding:10px 18px;color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.02em}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(99,102,241,0.35)}
+.btn-secondary{background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.25);border-radius:8px;padding:9px 16px;color:var(--indigo);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-secondary:hover{background:rgba(99,102,241,0.18)}
+.mono{font-family:var(--mono)}
+.stat-num{font-size:28px;font-weight:800;line-height:1}
+.stat-label{font-size:11px;color:var(--text2);margin-top:6px}
+.stat-change{font-size:10px;margin-top:4px}
+.stat-up{color:var(--emerald)}
+.stat-down{color:var(--rose)}
+.divider{height:1px;background:rgba(148,163,184,0.08);margin:14px 0}
+
+/* ══════════════════════════════════
+   DASHBOARD
+══════════════════════════════════ */
+.dash-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi-card{background:rgba(10,18,40,0.7);border:1px solid var(--card-border);border-radius:12px;padding:18px;transition:all .3s;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi-card.indigo::before{background:linear-gradient(90deg,#6366f1,#8b5cf6)}
+.kpi-card.emerald::before{background:linear-gradient(90deg,#10b981,#059669)}
+.kpi-card.amber::before{background:linear-gradient(90deg,#f59e0b,#d97706)}
+.kpi-card.sky::before{background:linear-gradient(90deg,#38bdf8,#0ea5e9)}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(0,0,0,0.3)}
+.kpi-icon{font-size:22px;margin-bottom:10px}
+.kpi-num{font-size:26px;font-weight:800;line-height:1;margin-bottom:4px}
+.kpi-lbl{font-size:11px;color:var(--text2)}
+.kpi-sub{font-size:10px;color:var(--text3);margin-top:4px}
+.dash-mid{display:grid;grid-template-columns:1fr 340px;gap:16px;margin-bottom:16px}
+.dash-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.chart-wrap{width:100%;height:140px;position:relative}
+.chart-svg{width:100%;height:100%}
+.activity-feed{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto}
+.activity-item{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:8px;background:rgba(15,23,42,0.5);border:1px solid transparent;transition:border-color .2s}
+.activity-item:hover{border-color:var(--card-border)}
+.activity-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.ai-indigo{background:rgba(99,102,241,0.15)}
+.ai-emerald{background:rgba(16,185,129,0.12)}
+.ai-amber{background:rgba(245,158,11,0.12)}
+.ai-rose{background:rgba(244,63,94,0.12)}
+.ai-violet{background:rgba(139,92,246,0.12)}
+.activity-content{}
+.activity-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px}
+.activity-time{font-size:10px;color:var(--text3)}
+.agent-card{background:rgba(15,23,42,0.6);border:1px solid var(--card-border);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px;transition:all .2s;cursor:pointer}
+.agent-card:hover{border-color:rgba(99,102,241,0.35);transform:translateY(-1px)}
+.agent-avatar-sm{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.a1-av{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+.a2-av{background:linear-gradient(135deg,#10b981,#059669)}
+.a3-av{background:linear-gradient(135deg,#f59e0b,#d97706)}
+.agent-info{}
+.agent-name-sm{font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px}
+.agent-role{font-size:10px;color:var(--text2)}
+.agent-dot{width:7px;height:7px;border-radius:50%;margin-left:auto;flex-shrink:0}
+.agent-dot.online{background:var(--emerald);animation:pulse 2s infinite}
+.agent-dot.busy{background:var(--amber);animation:pulse 1.5s infinite}
+.agent-dot.idle{background:var(--text3)}
+.progress-bar{height:5px;background:rgba(148,163,184,0.1);border-radius:3px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;border-radius:3px;transition:width 1.2s ease}
+.pf-indigo{background:linear-gradient(90deg,#6366f1,#8b5cf6)}
+.pf-emerald{background:linear-gradient(90deg,#10b981,#059669)}
+.pf-amber{background:linear-gradient(90deg,#f59e0b,#d97706)}
+.health-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(148,163,184,0.06);font-size:12px}
+.health-row:last-child{border:none}
+.health-key{color:var(--text2)}
+.health-val{font-family:var(--mono);font-size:11px}
+.health-ok{color:var(--emerald)}
+.health-warn{color:var(--amber)}
+.health-ms{color:var(--sky)}
+
+/* ══════════════════════════════════
+   MANDATES
+══════════════════════════════════ */
+.mandates-layout{display:grid;grid-template-columns:1fr 340px;gap:16px}
+.mandate-table-wrap{background:rgba(10,18,40,0.7);border:1px solid var(--card-border);border-radius:12px;overflow:hidden}
+.table-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--card-border)}
+.search-wrap{position:relative;display:flex;align-items:center}
+.search-icon{position:absolute;left:10px;color:var(--text3);font-size:13px}
+.search-input{background:rgba(15,23,42,0.8);border:1px solid rgba(148,163,184,0.15);border-radius:7px;padding:8px 12px 8px 32px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;width:220px;transition:border-color .2s}
+.search-input:focus{border-color:rgba(99,102,241,0.4)}
+.filter-btns{display:flex;gap:6px}
+.filter-btn{padding:6px 12px;font-size:11px;border-radius:6px;cursor:pointer;border:1px solid rgba(148,163,184,0.15);background:transparent;color:var(--text2);transition:all .2s;font-family:var(--font)}
+.filter-btn:hover,.filter-btn.active{background:rgba(99,102,241,0.12);border-color:rgba(99,102,241,0.3);color:var(--indigo)}
+.mandate-table{width:100%;border-collapse:collapse}
+.mandate-table th{padding:10px 20px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--card-border);background:rgba(5,10,24,0.4)}
+.mandate-table td{padding:13px 20px;font-size:12px;border-bottom:1px solid rgba(148,163,184,0.05);color:var(--text)}
+.mandate-table tr:last-child td{border-bottom:none}
+.mandate-table tr:hover td{background:rgba(99,102,241,0.04)}
+.mandate-table tr{cursor:pointer;transition:background .15s}
+.mandate-id-cell{font-family:var(--mono);font-size:11px;color:var(--indigo);font-weight:600}
+.spend-mini{display:flex;flex-direction:column;gap:3px}
+.spend-mini-bar{height:3px;background:rgba(148,163,184,0.1);border-radius:2px;width:80px}
+.spend-mini-fill{height:100%;border-radius:2px}
+.right-sidebar-mandates{display:flex;flex-direction:column;gap:14px}
+.mandate-detail-card{background:rgba(10,18,40,0.7);border:1px solid var(--card-border);border-radius:12px;padding:18px}
+.mdc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.mdc-id{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text)}
+.mdc-field{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(148,163,184,0.06);font-size:12px}
+.mdc-field:last-of-type{border:none}
+.mdc-key{color:var(--text3)}
+.mdc-val{color:var(--text);font-family:var(--mono);font-size:11px}
+.crypto-box{background:rgba(5,10,24,0.8);border:1px solid rgba(99,102,241,0.15);border-radius:7px;padding:10px;font-family:var(--mono);font-size:10px;color:var(--indigo);word-break:break-all;margin:10px 0}
+.big-limit{font-size:28px;font-weight:800;color:var(--text);margin:8px 0}
+.big-limit-sub{font-size:11px;color:var(--text2)}
+.countdown-box{background:rgba(5,10,24,0.6);border:1px solid var(--card-border);border-radius:8px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.countdown-lbl{font-size:10px;color:var(--text2)}
+.countdown-time{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--emerald)}
+.countdown-sub{font-size:9px;color:var(--text3);letter-spacing:.06em}
+.new-mandate-form{}
+.form-row{margin-bottom:14px}
+.form-label{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:6px}
+.form-input{width:100%;background:rgba(15,23,42,0.8);border:1px solid rgba(148,163,184,0.15);border-radius:7px;padding:10px 12px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:rgba(99,102,241,0.4)}
+.form-select{width:100%;background:rgba(15,23,42,0.8);border:1px solid rgba(148,163,184,0.15);border-radius:7px;padding:10px 12px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;appearance:none;cursor:pointer}
+.form-select:focus{border-color:rgba(99,102,241,0.4)}
+
+/* ══════════════════════════════════
+   AGENTS (3-panel checkout)
+══════════════════════════════════ */
+.agents-page{padding:0 !important;display:none;height:100%}
+.agents-page.active{display:flex !important}
+.agents-layout{display:flex;width:100%;height:100%}
+.left-panel{width:268px;flex-shrink:0;background:rgba(7,12,26,0.92);border-right:1px solid var(--card-border);display:flex;flex-direction:column;overflow-y:auto;padding:16px;gap:12px}
+.agent-header-lp{margin-bottom:4px}
+.agent-label-lp{font-size:9px;font-weight:600;letter-spacing:.12em;color:var(--text3);text-transform:uppercase}
+.agent-name-lp{font-size:15px;font-weight:700;color:var(--text);margin:3px 0}
+.agent-status-lp{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.sdot.active{background:var(--emerald);animation:pulse 2s infinite}
+.panel-card{background:rgba(15,23,42,0.6);border:1px solid var(--card-border);border-radius:10px;padding:14px;transition:all .4s}
+.panel-card.highlighted{border-color:rgba(99,102,241,0.4);box-shadow:0 0 20px rgba(99,102,241,0.07)}
+.panel-card-title{font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.ctx-key{font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--text3);text-transform:uppercase}
+.ctx-time{font-size:10px;color:var(--indigo);font-family:var(--mono);margin:2px 0}
+.ctx-desc{font-size:11px;color:var(--text2);line-height:1.5}
+.ctx-placeholder{font-size:11px;color:var(--text3);font-style:italic}
+.ctx-row{margin-bottom:10px}
+.mandate-inactive{text-align:center;padding:20px 0;color:var(--text3);font-size:12px}
+.mandate-id-lp{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.vc-badge{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:var(--emerald);font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.06em}
+.mf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.mf-key{font-size:9px;font-weight:600;letter-spacing:.08em;color:var(--text3);text-transform:uppercase}
+.mf-val{font-size:11px;color:var(--text);font-family:var(--mono)}
+.crypto-field{background:rgba(5,10,24,0.8);border:1px solid rgba(99,102,241,0.15);border-radius:6px;padding:8px 10px;font-family:var(--mono);font-size:10px;color:var(--indigo);margin:8px 0;word-break:break-all}
+.spend-bar-track{height:5px;background:rgba(148,163,184,0.12);border-radius:3px;overflow:hidden;margin:8px 0 4px}
+.spend-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--indigo),var(--emerald));border-radius:3px;transition:width 1.2s ease}
+.spend-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--text2);font-family:var(--mono)}
+.expiry-wrap{background:rgba(5,10,24,0.6);border:1px solid var(--card-border);border-radius:8px;padding:10px 12px;margin-top:8px;display:flex;justify-content:space-between;align-items:center}
+.expiry-timer{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--emerald)}
+.expiry-sub{font-size:9px;color:var(--text3);letter-spacing:.05em}
+.vc-id-lp{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:8px}
+.btn-new-mandate{width:100%;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:8px;padding:10px;color:#fff;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;margin-top:4px;transition:all .2s}
+.btn-new-mandate:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(99,102,241,0.3)}
+.panel-links{display:flex;gap:16px;margin-top:2px}
+.panel-link{font-size:10px;color:var(--text3);cursor:pointer;display:flex;align-items:center;gap:4px;transition:color .2s}
+.panel-link:hover{color:var(--text2)}
+.center-panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chat-header{padding:13px 20px;border-bottom:1px solid var(--card-border);background:rgba(7,12,26,0.8);backdrop-filter:blur(10px);flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+.live-badge{background:rgba(16,185,129,0.13);border:1px solid rgba(16,185,129,0.3);color:var(--emerald);font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;letter-spacing:.07em;display:flex;align-items:center;gap:4px}
+.live-dot{width:5px;height:5px;background:var(--emerald);border-radius:50%;animation:pulse 1.5s infinite}
+.messages{flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:13px;scroll-behavior:smooth}
+.msg-row{display:flex;gap:10px;animation:slideUp .3s ease}
+.msg-row.user{flex-direction:row-reverse}
+.msg-avatar{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.ag-av{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+.usr-av{background:linear-gradient(135deg,#1e293b,#334155);color:var(--text2)}
+.msg-bubble{max-width:460px;background:rgba(15,23,42,0.8);border:1px solid var(--card-border);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;color:var(--text);border-left:2px solid rgba(99,102,241,0.4)}
+.msg-row.user .msg-bubble{background:linear-gradient(135deg,rgba(99,102,241,0.18),rgba(139,92,246,0.13));border:1px solid rgba(99,102,241,0.22);border-left:none;border-right:2px solid rgba(139,92,246,0.5)}
+.msg-sender{font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--text3);text-transform:uppercase;margin-bottom:5px}
+.typing-indicator{display:flex;gap:4px;padding:4px 0;align-items:center}
+.typing-dot{width:7px;height:7px;border-radius:50%;background:var(--indigo);animation:bounce 1.2s infinite;opacity:.7}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+.inline-card{background:rgba(5,10,24,0.9);border:1px solid rgba(99,102,241,0.22);border-radius:10px;padding:15px;margin-top:8px;max-width:360px}
+.inline-card-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.consent-list{list-style:none;margin-bottom:14px}
+.consent-list li{font-size:12px;color:var(--text2);padding:4px 0;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(148,163,184,0.06)}
+.consent-list li::before{content:'•';color:var(--indigo);font-weight:900}
+.btn-consent{background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:7px;padding:10px 20px;color:#fff;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;width:100%;transition:all .2s}
+.btn-consent:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(99,102,241,0.32)}
+.btn-consent:disabled{opacity:.4;pointer-events:none}
+.mcard-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(148,163,184,0.06);font-size:11px}
+.mcard-key{color:var(--text3)}
+.mcard-val{color:var(--text);font-family:var(--mono)}
+.btn-sign{background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:7px;padding:10px 20px;color:#fff;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;width:100%;margin-top:12px;transition:all .2s}
+.btn-sign:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(16,185,129,0.28)}
+.btn-sign:disabled{opacity:.4;pointer-events:none}
+.auth-banner{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:14px 16px;margin-top:8px;max-width:400px}
+.auth-banner-title{font-size:14px;font-weight:700;color:var(--emerald);margin-bottom:5px}
+.auth-banner-vc{font-family:var(--mono);font-size:10px;color:var(--emerald);opacity:.65;margin-top:4px}
+.vc-steps{margin-top:8px;display:flex;flex-direction:column;gap:5px}
+.vc-step{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px;opacity:0;animation:fadeIn .3s ease forwards}
+.vc-step.done{color:var(--emerald)}
+.product-card{background:rgba(10,18,40,0.85);border:1px solid var(--card-border);border-radius:9px;padding:12px 14px;max-width:380px;margin-top:6px;display:flex;justify-content:space-between;align-items:center;transition:border-color .2s}
+.product-card:hover{border-color:rgba(99,102,241,0.3)}
+.product-name{font-size:13px;font-weight:600;color:var(--text)}
+.product-desc{font-size:11px;color:var(--text2);margin-top:3px}
+.product-price{font-size:15px;font-weight:700;color:var(--text);font-family:var(--mono);white-space:nowrap;margin-left:12px}
+.cart-summary{background:rgba(10,18,40,0.9);border:1px solid rgba(99,102,241,0.28);border-radius:10px;padding:14px 16px;max-width:380px;margin-top:10px}
+.cart-total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.cart-total{font-size:17px;font-weight:700;font-family:var(--mono)}
+.cart-within{font-size:10px;color:var(--emerald);margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.btn-finalize{background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:7px;padding:11px 20px;color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;width:100%;transition:all .2s}
+.btn-finalize:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(99,102,241,0.32)}
+.btn-finalize:disabled{opacity:.4;pointer-events:none}
+.shimmer-card{background:linear-gradient(90deg,rgba(15,23,42,0.6) 25%,rgba(30,42,70,0.6) 50%,rgba(15,23,42,0.6) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:9px;height:76px;max-width:380px;margin-top:6px}
+.uap-card{background:rgba(7,12,26,0.96);border:1px solid rgba(99,102,241,0.28);border-radius:12px;max-width:420px;margin-top:8px;overflow:hidden}
+.uap-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(99,102,241,0.13)}
+.uap-title{font-size:13px;font-weight:700;color:var(--text)}
+.uap-status{font-size:10px;color:var(--amber);display:flex;align-items:center;gap:5px;animation:pulse 1.5s infinite}
+.uap-globe{width:100%;height:196px;background:#040810}
+.uap-footer{padding:10px 16px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.uap-field{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.uap-field span{color:var(--text2)}
+.payment-card{background:rgba(5,10,24,0.96);border:1px solid rgba(99,102,241,0.28);border-radius:10px;padding:18px;max-width:360px;margin-top:8px}
+.payment-test-note{font-size:10px;color:var(--amber);margin-bottom:14px;display:flex;align-items:center;gap:5px}
+.payment-field{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(148,163,184,0.06);font-size:12px}
+.pf-key{color:var(--text3)}
+.pf-val{color:var(--text);font-family:var(--mono);font-weight:500}
+.btn-pay{width:100%;background:linear-gradient(135deg,#10b981,#6366f1);border:none;border-radius:8px;padding:13px;color:#fff;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:14px}
+.btn-pay:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(16,185,129,0.28)}
+.btn-pay:disabled{opacity:.5;pointer-events:none}
+.success-banner{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.32);border-radius:12px;padding:20px;max-width:380px;margin-top:8px;text-align:center}
+.success-icon{font-size:36px;margin-bottom:10px}
+.success-title{font-size:16px;font-weight:800;color:var(--emerald);margin-bottom:8px}
+.success-field{display:flex;justify-content:space-between;padding:5px 0;font-size:11px;border-bottom:1px solid rgba(16,185,129,0.1);text-align:left}
+.failure-banner{background:rgba(245,158,11,0.09);border:1px solid rgba(245,158,11,0.32);border-radius:12px;padding:16px;max-width:380px;margin-top:8px}
+.failure-title{font-size:13px;font-weight:700;color:var(--amber);margin-bottom:8px}
+.failure-desc{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px}
+.failure-cart{font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:10px}
+.btn-retry{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:var(--amber);border-radius:7px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .2s;margin-right:8px}
+.btn-retry:hover{background:rgba(245,158,11,0.25)}
+.btn-save-exit{background:transparent;border:1px solid rgba(148,163,184,0.15);color:var(--text2);border-radius:7px;padding:8px 16px;font-size:12px;cursor:pointer;font-family:var(--font);transition:all .2s}
+.btn-save-exit:hover{border-color:rgba(99,102,241,0.3);color:var(--text)}
+.pay-loading{text-align:center;padding:16px;max-width:360px;margin-top:8px}
+.pay-spinner{width:30px;height:30px;border:3px solid rgba(99,102,241,0.2);border-top:3px solid var(--indigo);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 10px}
+.input-bar{padding:13px 16px;border-top:1px solid var(--card-border);background:rgba(7,12,26,0.9);display:flex;gap:10px;align-items:center;flex-shrink:0}
+.chat-input{flex:1;background:rgba(15,23,42,0.8);border:1px solid rgba(148,163,184,0.15);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;transition:border-color .2s}
+.chat-input:focus{border-color:rgba(99,102,241,0.4)}
+.chat-input:disabled{opacity:.4;cursor:not-allowed}
+.btn-send{width:38px;height:38px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:15px;flex-shrink:0;transition:all .2s}
+.btn-send:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(99,102,241,0.32)}
+.btn-send:disabled{opacity:.4;cursor:not-allowed}
+.right-panel-audit{width:302px;flex-shrink:0;background:rgba(7,12,26,0.92);border-left:1px solid var(--card-border);display:flex;flex-direction:column;overflow:hidden}
+.audit-header{padding:13px 16px;border-bottom:1px solid var(--card-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.audit-title{font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
+.audit-count{background:rgba(99,102,241,0.15);color:var(--indigo);font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px}
+.audit-entries{flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:5px}
+.audit-entry{display:flex;gap:7px;animation:slideInRight .22s ease;padding:6px 8px;border-radius:6px;background:rgba(15,23,42,0.4);border:1px solid transparent;transition:border-color .2s}
+.audit-entry:hover{border-color:var(--card-border)}
+.audit-ts{font-family:var(--mono);font-size:9px;color:var(--text3);flex-shrink:0;min-width:50px;padding-top:1px}
+.audit-type{font-family:var(--mono);font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;flex-shrink:0;white-space:nowrap;height:fit-content;margin-top:1px}
+.audit-msg{font-size:10px;color:var(--text2);line-height:1.4;font-family:var(--mono)}
+.at-INFO{background:rgba(100,116,139,0.2);color:#94a3b8}
+.at-REQ{background:rgba(99,102,241,0.2);color:var(--indigo)}
+.at-OK{background:rgba(16,185,129,0.2);color:var(--emerald)}
+.at-YIELD{background:rgba(245,158,11,0.2);color:var(--amber)}
+.at-SESS{background:rgba(56,189,248,0.14);color:var(--sky)}
+.at-SIG{background:rgba(16,185,129,0.14);color:#6ee7b7}
+.at-VC{background:rgba(139,92,246,0.2);color:var(--violet)}
+.at-DB{background:rgba(100,116,139,0.14);color:#64748b}
+.at-LIMIT{background:rgba(245,158,11,0.14);color:var(--amber)}
+.at-ERROR{background:rgba(244,63,94,0.2);color:var(--rose)}
+.at-FAIL{background:rgba(244,63,94,0.2);color:var(--rose)}
+
+/* ══════════════════════════════════
+   SECURITY
+══════════════════════════════════ */
+.security-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.security-full{grid-column:1/-1}
+.sec-status-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:14px 18px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:10px}
+.sec-status-icon{font-size:20px}
+.sec-status-text{font-size:14px;font-weight:700;color:var(--emerald)}
+.sec-status-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.sec-status-badge{margin-left:auto}
+.vc-visual{background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(139,92,246,0.08));border:1px solid rgba(99,102,241,0.25);border-radius:10px;padding:16px;text-align:center;margin-bottom:14px}
+.vc-visual-icon{font-size:40px;margin-bottom:8px}
+.vc-visual-title{font-size:14px;font-weight:700;color:var(--violet);margin-bottom:4px}
+.vc-visual-sub{font-size:11px;color:var(--text2)}
+.vc-credential-id{font-family:var(--mono);font-size:11px;background:rgba(5,10,24,0.8);border:1px solid rgba(99,102,241,0.2);border-radius:6px;padding:8px 10px;margin-top:10px;text-align:left;color:var(--indigo)}
+.sec-log{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto}
+.sec-log-entry{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:7px;background:rgba(15,23,42,0.5);border:1px solid transparent;transition:border-color .2s}
+.sec-log-entry:hover{border-color:var(--card-border)}
+.sec-log-ts{font-family:var(--mono);font-size:9px;color:var(--text3);flex-shrink:0;min-width:44px;margin-top:1px}
+.sec-log-code{font-family:var(--mono);font-size:10px;font-weight:700;flex-shrink:0;white-space:nowrap;margin-top:1px}
+.sec-log-msg{font-size:11px;color:var(--text2);line-height:1.4}
+.slc-green{color:var(--emerald)}
+.slc-indigo{color:var(--indigo)}
+.slc-violet{color:var(--violet)}
+.slc-amber{color:var(--amber)}
+.slc-sky{color:var(--sky)}
+.slc-slate{color:var(--text3)}
+.policy-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(148,163,184,0.07);font-size:12px}
+.policy-row:last-child{border:none}
+.policy-name{color:var(--text);font-weight:500}
+.policy-scope{font-size:10px;color:var(--text3);margin-top:2px}
+.policy-status{display:flex;align-items:center;gap:8px}
+.key-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(148,163,184,0.07)}
+.key-row:last-child{border:none}
+.key-icon{width:32px;height:32px;border-radius:8px;background:rgba(99,102,241,0.12);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.key-info{}
+.key-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px}
+.key-fp{font-family:var(--mono);font-size:10px;color:var(--text3)}
+.key-status{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.risk-meter{height:6px;border-radius:3px;overflow:hidden;background:rgba(148,163,184,0.1);width:80px}
+.risk-fill-low{height:100%;width:15%;background:var(--emerald);border-radius:3px}
+.risk-fill-med{height:100%;width:55%;background:var(--amber);border-radius:3px}
+.risk-fill-high{height:100%;width:90%;background:var(--rose);border-radius:3px}
+.risk-label{font-size:9px;letter-spacing:.06em;font-weight:700}
+.risk-low{color:var(--emerald)}
+.risk-med{color:var(--amber)}
+.risk-high{color:var(--rose)}
+
+/* ── CONFETTI ── */
+.confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:200;overflow:hidden}
+.confetti-piece{position:absolute;top:-10px;border-radius:2px;animation:confettiFall linear forwards}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);z-index:150;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:all .2s}
+.modal-overlay.open{opacity:1;visibility:visible}
+.modal{background:rgba(10,18,40,0.97);border:1px solid rgba(99,102,241,0.3);border-radius:16px;padding:28px;width:500px;max-height:80vh;overflow-y:auto;animation:slideUp .2s ease}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.modal-title{font-size:16px;font-weight:800;color:var(--text)}
+.modal-close{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;transition:color .2s;line-height:1}
+.modal-close:hover{color:var(--text)}
+
+/* ── KEYFRAMES ── */
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(.82)}}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes confettiFall{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
+@keyframes nodeGlow{0%,100%{filter:drop-shadow(0 0 3px rgba(16,185,129,.3))}50%{filter:drop-shadow(0 0 10px rgba(16,185,129,.9))}}
+@keyframes countUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes dashAnim{to{stroke-dashoffset:0}}
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<!-- ── LOGIN ── -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo"><div class="logo-hex">⬡</div><span class="login-title">NEXUS TERMINAL</span></div>
+    <p class="login-subtitle">INSTITUTIONAL GRADE AI</p>
+    <div class="field-label">INSTITUTIONAL ID</div>
+    <div class="field-wrap"><span class="field-icon">⊞</span><input id="inst-id" class="login-input" type="text" value="ACME-CORP-NODE-01"/></div>
+    <div class="field-label">CRYPTOGRAPHIC KEY</div>
+    <div class="field-wrap"><span class="field-icon">⚷</span><input id="crypto-key" class="login-input" type="password" value="••••••••••••••••"/></div>
+    <button id="btn-auth" class="btn-auth-main" onclick="authenticate()">⇢ &nbsp;Authenticate</button>
+    <button class="btn-sso">⊕ &nbsp;Secure SSO</button>
+    <button class="btn-sso">⬡ &nbsp;AP2 Identity Link</button>
+    <div class="ap2-node"><span class="ndot"></span>AP2 Node: Active &amp; Secured</div>
+  </div>
+  <div class="login-footer">
+    <span class="footer-left">© 2024 NEXUS TERMINAL. INSTITUTIONAL GRADE SECURITY ENABLED.</span>
+    <div class="footer-links"><a href="#">Security Architecture</a><a href="#">Compliance</a><a href="#">Terms of Service</a><a href="#">Support</a></div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ── -->
+<div id="main-app">
+  <header class="app-header">
+    <div class="header-logo" onclick="navigate('dashboard')"><div class="header-logo-icon">⬡</div>Nexus Terminal</div>
+    <nav class="header-nav">
+      <button class="nav-item active" id="nav-dashboard" onclick="navigate('dashboard')">Dashboard</button>
+      <button class="nav-item" id="nav-mandates" onclick="navigate('mandates')">Mandates</button>
+      <button class="nav-item" id="nav-agents" onclick="navigate('agents')">Agents</button>
+      <button class="nav-item" id="nav-security" onclick="navigate('security')">Security</button>
+      <button class="nav-item" id="nav-catalog" onclick="navigate('catalog')">Catalog</button>
+    </nav>
+    <div class="header-right">
+      <span class="test-badge">TEST MODE</span>
+      <div class="failure-toggle-wrap">
+        <span style="font-size:11px">Simulate Failure</span>
+        <button id="failure-toggle" class="toggle-track" onclick="toggleFailure()"><span class="toggle-knob"></span></button>
+      </div>
+      <div class="icon-btn" title="Notifications" style="position:relative">🔔<span class="notif-dot"></span></div>
+      <div class="icon-btn" title="Settings">⚙</div>
+      <div class="avatar">AM</div>
+    </div>
+  </header>
+
+  <div class="page-container">
+
+    <!-- ══ DASHBOARD PAGE ══ -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div><div class="page-title">Dashboard</div><div class="page-sub">System overview · Arjun Mehta · ACME-CORP-NODE-01</div></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-secondary" onclick="navigate('agents')">+ New Session</button>
+          <button class="btn-primary" onclick="openNewMandateModal()">+ New Mandate</button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="dash-kpi-grid">
+        <div class="kpi-card indigo">
+          <div class="kpi-icon">🛡</div>
+          <div class="kpi-num" style="color:#a5b4fc">3</div>
+          <div class="kpi-lbl">Active Mandates</div>
+          <div class="kpi-sub">↑ 1 from yesterday</div>
+        </div>
+        <div class="kpi-card emerald">
+          <div class="kpi-icon">₹</div>
+          <div class="kpi-num" style="color:#6ee7b7">₹12,400</div>
+          <div class="kpi-lbl">Total Authorized</div>
+          <div class="kpi-sub">Across 3 mandates</div>
+        </div>
+        <div class="kpi-card amber">
+          <div class="kpi-icon">⚡</div>
+          <div class="kpi-num" style="color:#fcd34d">2</div>
+          <div class="kpi-lbl">Agents Online</div>
+          <div class="kpi-sub">Agent 1, Agent 2 active</div>
+        </div>
+        <div class="kpi-card sky">
+          <div class="kpi-icon">✅</div>
+          <div class="kpi-num" style="color:#7dd3fc">7</div>
+          <div class="kpi-lbl">Sessions Today</div>
+          <div class="kpi-sub">99.2% success rate</div>
+        </div>
+      </div>
+
+      <!-- Mid Row -->
+      <div class="dash-mid">
+        <!-- Spending Chart Card -->
+        <div class="card">
+          <div class="card-title">📈 Spending Over Time (Last 7 Days)</div>
+          <div class="chart-wrap">
+            <svg class="chart-svg" viewBox="0 0 560 130" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="cg1" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#6366f1" stop-opacity="0.3"/>
+                  <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+                </linearGradient>
+                <linearGradient id="cg2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#10b981" stop-opacity="0.25"/>
+                  <stop offset="100%" stop-color="#10b981" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <!-- Grid lines -->
+              <line x1="0" y1="30" x2="560" y2="30" stroke="rgba(148,163,184,0.06)" stroke-width="1"/>
+              <line x1="0" y1="65" x2="560" y2="65" stroke="rgba(148,163,184,0.06)" stroke-width="1"/>
+              <line x1="0" y1="100" x2="560" y2="100" stroke="rgba(148,163,184,0.06)" stroke-width="1"/>
+              <!-- Area fill -->
+              <path d="M0,100 L80,85 L160,60 L240,70 L320,40 L400,55 L480,20 L560,30 L560,130 L0,130 Z" fill="url(#cg1)"/>
+              <path d="M0,100 L80,85 L160,60 L240,70 L320,40 L400,55 L480,20 L560,30" fill="none" stroke="#6366f1" stroke-width="2.5" stroke-linejoin="round"/>
+              <!-- Auth line -->
+              <path d="M0,115 L80,105 L160,90 L240,95 L320,72 L400,80 L480,55 L560,60" fill="none" stroke="#10b981" stroke-width="1.5" stroke-dasharray="5,3" stroke-linejoin="round"/>
+              <!-- Points -->
+              <circle cx="80" cy="85" r="4" fill="#6366f1"/>
+              <circle cx="160" cy="60" r="4" fill="#6366f1"/>
+              <circle cx="240" cy="70" r="4" fill="#6366f1"/>
+              <circle cx="320" cy="40" r="4" fill="#6366f1"/>
+              <circle cx="400" cy="55" r="4" fill="#6366f1"/>
+              <circle cx="480" cy="20" r="4" fill="#8b5cf6"/>
+              <circle cx="560" cy="30" r="5" fill="#8b5cf6" stroke="#fff" stroke-width="1.5"/>
+              <!-- Labels -->
+              <text x="10" y="128" font-size="9" fill="#475569" font-family="Inter">Mon</text>
+              <text x="70" y="128" font-size="9" fill="#475569" font-family="Inter">Tue</text>
+              <text x="150" y="128" font-size="9" fill="#475569" font-family="Inter">Wed</text>
+              <text x="228" y="128" font-size="9" fill="#475569" font-family="Inter">Thu</text>
+              <text x="308" y="128" font-size="9" fill="#475569" font-family="Inter">Fri</text>
+              <text x="388" y="128" font-size="9" fill="#475569" font-family="Inter">Sat</text>
+              <text x="465" y="128" font-size="9" fill="#94a3b8" font-family="Inter">Sun</text>
+              <text x="545" y="128" font-size="9" fill="#8b5cf6" font-family="Inter">Today</text>
+              <!-- Y Labels -->
+              <text x="3" y="34" font-size="9" fill="#475569" font-family="Inter">₹5k</text>
+              <text x="3" y="68" font-size="9" fill="#475569" font-family="Inter">₹3k</text>
+              <text x="3" y="103" font-size="9" fill="#475569" font-family="Inter">₹1k</text>
+            </svg>
+          </div>
+          <div style="display:flex;gap:20px;margin-top:8px">
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)"><span style="width:12px;height:3px;background:#6366f1;display:inline-block;border-radius:2px"></span>Spend</div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)"><span style="width:12px;height:3px;background:#10b981;border-top:1px dashed #10b981;display:inline-block;border-radius:2px"></span>Authorization Limit</div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card">
+          <div class="card-title">🕐 Recent Activity</div>
+          <div class="activity-feed">
+            <div class="activity-item"><div class="activity-icon ai-emerald">✅</div><div class="activity-content"><div class="activity-title">Order ORD-2024-88471 confirmed</div><div class="activity-time">2 minutes ago · ₹4,700</div></div></div>
+            <div class="activity-item"><div class="activity-icon ai-indigo">🛡</div><div class="activity-content"><div class="activity-title">Mandate M-9A4F-22B1 activated</div><div class="activity-time">18 minutes ago · ₹5,000 limit</div></div></div>
+            <div class="activity-item"><div class="activity-icon ai-violet">🔐</div><div class="activity-content"><div class="activity-title">VC-9A4F issued by AP2 Service</div><div class="activity-time">20 minutes ago · 24h expiry</div></div></div>
+            <div class="activity-item"><div class="activity-icon ai-amber">⚡</div><div class="activity-content"><div class="activity-title">Agent 1 session initialized</div><div class="activity-time">21 minutes ago · ACME Catalog</div></div></div>
+            <div class="activity-item"><div class="activity-icon ai-rose">🔔</div><div class="activity-content"><div class="activity-title">Mandate M-7B3C approaching expiry</div><div class="activity-time">1 hour ago · 2h remaining</div></div></div>
+            <div class="activity-item"><div class="activity-icon ai-indigo">💳</div><div class="activity-content"><div class="activity-title">Payment ₹1,200 via Razorpay Test</div><div class="activity-time">3 hours ago · M-4D1A</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row -->
+      <div class="dash-bottom">
+        <!-- Active Agents -->
+        <div class="card">
+          <div class="card-title">🤖 Agent Status</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="agent-card" onclick="navigate('agents')">
+              <div class="agent-avatar-sm a1-av">A1</div>
+              <div class="agent-info"><div class="agent-name-sm">Agent 1 — Negotiator</div><div class="agent-role">Conversational Checkout · ACME Catalog</div><div class="progress-bar" style="width:120px"><div class="progress-fill pf-indigo" style="width:75%"></div></div></div>
+              <div class="agent-dot online"></div>
+            </div>
+            <div class="agent-card">
+              <div class="agent-avatar-sm a2-av">A2</div>
+              <div class="agent-info"><div class="agent-name-sm">Agent 2 — Executor</div><div class="agent-role">Payment Processing · UAP Handler</div><div class="progress-bar" style="width:120px"><div class="progress-fill pf-emerald" style="width:45%"></div></div></div>
+              <div class="agent-dot busy"></div>
+            </div>
+            <div class="agent-card">
+              <div class="agent-avatar-sm a3-av">A3</div>
+              <div class="agent-info"><div class="agent-name-sm">Agent 3 — Auditor</div><div class="agent-role">PostgreSQL Logger · Compliance</div><div class="progress-bar" style="width:120px"><div class="progress-fill pf-amber" style="width:20%"></div></div></div>
+              <div class="agent-dot idle"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mandate Overview -->
+        <div class="card">
+          <div class="card-title">📋 Mandate Overview</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--text2)">M-9A4F-22B1</span><span class="badge badge-green">ACTIVE</span></div>
+              <div class="progress-bar"><div class="progress-fill pf-indigo" style="width:94%"></div></div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--mono)"><span>₹4,700 / ₹5,000</span><span>94%</span></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--text2)">M-7B3C-11D0</span><span class="badge badge-amber">EXPIRING</span></div>
+              <div class="progress-bar"><div class="progress-fill pf-amber" style="width:24%"></div></div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--mono)"><span>₹600 / ₹2,500</span><span>24%</span></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--text2)">M-4D1A-88F2</span><span class="badge badge-indigo">ACTIVE</span></div>
+              <div class="progress-bar"><div class="progress-fill pf-indigo" style="width:24%"></div></div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--mono)"><span>₹1,200 / ₹5,000</span><span>24%</span></div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <button class="btn-secondary" style="width:100%" onclick="navigate('mandates')">View All Mandates →</button>
+        </div>
+
+        <!-- System Health -->
+        <div class="card">
+          <div class="card-title">💚 System Health</div>
+          <div class="health-row"><span class="health-key">AP2 Authorization</span><span class="health-val health-ok">● ONLINE</span></div>
+          <div class="health-row"><span class="health-key">ACP Catalog API</span><span class="health-val health-ok">● ONLINE</span></div>
+          <div class="health-row"><span class="health-key">UAP / UPI Circle</span><span class="health-val health-ok">● ONLINE</span></div>
+          <div class="health-row"><span class="health-key">Razorpay Test API</span><span class="health-val health-warn">● DEGRADED</span></div>
+          <div class="health-row"><span class="health-key">Cloud PostgreSQL</span><span class="health-val health-ok">● ONLINE</span></div>
+          <div class="divider"></div>
+          <div class="health-row"><span class="health-key">Avg. Response</span><span class="health-val health-ms">142ms</span></div>
+          <div class="health-row"><span class="health-key">Uptime (30d)</span><span class="health-val health-ok">99.94%</span></div>
+          <div class="health-row"><span class="health-key">Security Events</span><span class="health-val" style="color:var(--text2)">0 critical</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MANDATES PAGE ══ -->
+    <div class="page" id="page-mandates">
+      <div class="page-header">
+        <div><div class="page-title">Mandates</div><div class="page-sub">Manage cryptographic intent mandates and spending authorizations</div></div>
+        <button class="btn-primary" onclick="openNewMandateModal()">+ New Mandate</button>
+      </div>
+      <div class="mandates-layout">
+        <!-- Table -->
+        <div>
+          <div class="mandate-table-wrap">
+            <div class="table-header">
+              <div class="search-wrap"><span class="search-icon">🔍</span><input class="search-input" placeholder="Search mandates..." oninput="filterMandates(this.value)"/></div>
+              <div class="filter-btns">
+                <button class="filter-btn active" onclick="setFilter(this,'all')">All</button>
+                <button class="filter-btn" onclick="setFilter(this,'active')">Active</button>
+                <button class="filter-btn" onclick="setFilter(this,'expiring')">Expiring</button>
+                <button class="filter-btn" onclick="setFilter(this,'expired')">Expired</button>
+              </div>
+            </div>
+            <table class="mandate-table" id="mandate-table">
+              <thead>
+                <tr>
+                  <th>Mandate ID</th><th>Agent</th><th>Scope</th><th>Spending</th><th>Expiry</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="mandate-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="right-sidebar-mandates">
+          <!-- Selected Mandate Detail -->
+          <div class="mandate-detail-card" id="mandate-detail-card">
+            <div class="card-title">🔍 Mandate Detail</div>
+            <div id="mandate-detail-content">
+              <div style="text-align:center;padding:20px 0;color:var(--text3);font-size:12px">Select a mandate to view details</div>
+            </div>
+          </div>
+
+          <!-- AP2 Auth Status -->
+          <div class="card">
+            <div class="card-title">🛡 AP2 Authorization</div>
+            <div class="vc-visual">
+              <div class="vc-visual-icon">🔐</div>
+              <div class="vc-visual-title">Verifiable Credential Active</div>
+              <div class="vc-visual-sub">Cryptographically secured intent</div>
+              <div class="vc-credential-id">
+                <div style="font-size:9px;color:var(--text3);margin-bottom:4px">CREDENTIAL ID</div>
+                VC-9A4F-22B1-88C0<br>
+                <span style="color:var(--text3)">ISSUER: did:nexus:ap2:node-01</span>
+              </div>
+            </div>
+            <div class="health-row"><span class="health-key">Delegation</span><span class="health-val" style="color:var(--sky)">UPI UAP Simulated</span></div>
+            <div class="health-row"><span class="health-key">Max Authorization</span><span class="health-val" style="color:var(--text)">₹5,000</span></div>
+          </div>
+
+          <!-- Spending Limits Card -->
+          <div class="card">
+            <div class="card-title">💳 Spending Limits Enforced</div>
+            <div class="big-limit">₹5,000</div>
+            <div class="big-limit-sub">Max Authorization · M-9A4F-22B1</div>
+            <div class="progress-bar" style="margin:10px 0 6px"><div class="progress-fill pf-indigo" style="width:94%"></div></div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text2)"><span>₹4,700 authorized</span><span>94% UTILIZED</span></div>
+            <div class="countdown-box">
+              <div><div class="countdown-lbl">⏱ Mandate Expiry</div><div style="font-size:9px;color:var(--text3)">Session authorized for Merchant catalog</div></div>
+              <div style="text-align:right"><div class="countdown-time" id="mandate-countdown">23:41:22</div><div class="countdown-sub">REMAINING</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ AGENTS PAGE ══ -->
+    <div class="page agents-page" id="page-agents">
+      <div class="agents-layout">
+        <!-- Left Panel -->
+        <aside class="left-panel">
+          <div class="agent-header-lp">
+            <div class="agent-label-lp">Agent 1</div>
+            <div class="agent-name-lp">Negotiator Node</div>
+            <div class="agent-status-lp"><span class="sdot" id="agent-sdot"></span><span id="agent-stext">Initializing...</span></div>
+          </div>
+          <div class="panel-card" id="auth-ctx-card">
+            <div class="panel-card-title">🛡 Authorization Context</div>
+            <div class="ctx-row">
+              <div class="ctx-key">SESSION INIT</div>
+              <div class="ctx-time" id="ctx-sess-time">--:--:--.---</div>
+              <div class="ctx-placeholder" id="ctx-sess-desc">Awaiting session start...</div>
+            </div>
+            <div class="ctx-row">
+              <div class="ctx-key" style="margin-top:8px">USER ACTION</div>
+              <div class="ctx-time" id="ctx-user-time">--:--:--.---</div>
+              <div class="ctx-placeholder" id="ctx-user-desc">No user action yet...</div>
+            </div>
+          </div>
+          <div class="panel-card" id="mandate-card">
+            <div class="panel-card-title">⬡ Active Mandate State <span id="vc-active-badge" style="display:none" class="vc-badge">VC ACTIVE</span></div>
+            <div id="mandate-inactive-lp" class="mandate-inactive">Session not yet authorized.<br><span style="font-size:10px;opacity:.5">Complete consent flow to activate.</span></div>
+            <div id="mandate-active-lp" style="display:none">
+              <div class="mandate-id-lp"><span>Mandate: <strong>M-9A4F-22B1</strong></span></div>
+              <div class="mf-row"><span class="mf-key">DELEGATION</span><span class="mf-val">UPI UAP Simulated</span></div>
+              <div class="mf-row"><span class="mf-key">SPENDING LIMIT</span><span class="mf-val">₹5,000.00</span></div>
+              <div class="crypto-field">0x9a4f...3c1b_AUTH_VAL</div>
+              <div class="spend-bar-track"><div class="spend-bar-fill" id="spend-bar"></div></div>
+              <div class="spend-labels"><span id="spend-auth">₹0 authorized</span><span id="spend-pct">0% UTILIZED</span></div>
+              <div class="expiry-wrap">
+                <div><div style="font-size:10px;color:var(--text2)">⏱ Mandate Expiry</div><div style="font-size:9px;color:var(--text3)">Merchant catalog</div></div>
+                <div style="text-align:right"><div class="expiry-timer" id="expiry-timer">23:59:59</div><div class="expiry-sub">REMAINING</div></div>
+              </div>
+              <div class="vc-id-lp">VC: VC-9A4F-22B1-88C0</div>
+            </div>
+          </div>
+          <button class="btn-new-mandate" onclick="resetDemo()">+ New Mandate</button>
+          <div class="panel-links"><div class="panel-link">❓ Support</div><div class="panel-link">&lt;/&gt; API</div></div>
+        </aside>
+
+        <!-- Center Chat -->
+        <section class="center-panel">
+          <div class="chat-header">
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px">Agent Protocol <span class="live-badge"><span class="live-dot"></span>LIVE SESSION</span></div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px">Agent 1 — Negotiator · Conversational Agentic Checkout</div>
+            </div>
+          </div>
+          <div class="messages" id="messages"></div>
+          <div class="input-bar">
+            <input id="chat-input" class="chat-input" type="text" placeholder="Type anything to start..." maxlength="200" onkeydown="handleKeydown(event)"/>
+            <button id="btn-send" class="btn-send" onclick="handleSend()">➤</button>
+          </div>
+        </section>
+
+        <!-- Right Audit -->
+        <aside class="right-panel-audit">
+          <div class="audit-header">
+            <div class="audit-title">📋 System Audit <span class="audit-count" id="audit-count">0</span></div>
+          </div>
+          <div class="audit-entries" id="audit-entries"></div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ══ CATALOG PAGE ══ -->
+    <div class="page" id="page-catalog">
+      <div class="page-header">
+        <div><div class="page-title">Agent-Readable Catalog</div><div class="page-sub">ACP Catalog API · Structured SKU data readable by AI agents · Live inventory</div></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-secondary" onclick="showApiResponse()">View API Response</button>
+          <button class="btn-primary" onclick="navigate('agents')">⚡ Start Checkout Session</button>
+        </div>
+      </div>
+
+      <div class="catalog-hero">
+        <div class="catalog-hero-left">
+          <div class="catalog-hero-title">ACME Corp · Merchant Catalog</div>
+          <div class="catalog-hero-sub">This catalog is structured for AI agent consumption via the ACP API.<br>Every SKU includes machine-readable tags, pricing, availability, and upsell graph signals.</div>
+          <div class="catalog-hero-badges">
+            <span class="badge badge-green">ACP COMPLIANT</span>
+            <span class="badge badge-indigo">AGENT-READABLE</span>
+            <span class="badge badge-sky">x402 READY</span>
+            <span class="badge badge-amber">UAP DELEGATABLE</span>
+          </div>
+        </div>
+        <div class="catalog-stats">
+          <div class="cstat"><div class="cstat-num">12</div><div class="cstat-lbl">Total SKUs</div></div>
+          <div class="cstat"><div class="cstat-num" style="color:var(--emerald)">10</div><div class="cstat-lbl">In Stock</div></div>
+          <div class="cstat"><div class="cstat-num" style="color:var(--amber)">₹34.5k</div><div class="cstat-lbl">Avg Basket</div></div>
+          <div class="cstat"><div class="cstat-num" style="color:var(--violet)">3.2x</div><div class="cstat-lbl">Upsell Rate</div></div>
+        </div>
+      </div>
+
+      <div class="catalog-layout">
+        <!-- Filters -->
+        <div class="catalog-filters">
+          <div class="cf-title">Filters</div>
+          <div class="cf-group">
+            <div class="cf-label">Category</div>
+            <label class="cf-item"><input type="checkbox" checked onchange="filterCatalog()"> Storage</label>
+            <label class="cf-item"><input type="checkbox" checked onchange="filterCatalog()"> Support</label>
+            <label class="cf-item"><input type="checkbox" checked onchange="filterCatalog()"> Security</label>
+            <label class="cf-item"><input type="checkbox" checked onchange="filterCatalog()"> Analytics</label>
+            <label class="cf-item"><input type="checkbox" checked onchange="filterCatalog()"> Networking</label>
+          </div>
+          <div class="cf-group">
+            <div class="cf-label">Price Range (₹)</div>
+            <div class="cf-price-range">
+              <input class="cf-price-input" type="number" placeholder="Min" value="0" id="price-min" oninput="filterCatalog()"/>
+              <input class="cf-price-input" type="number" placeholder="Max" value="10000" id="price-max" oninput="filterCatalog()"/>
+            </div>
+          </div>
+          <div class="cf-group">
+            <div class="cf-label">Agent Compatibility</div>
+            <label class="cf-item"><input type="checkbox" checked> ACP Catalog API</label>
+            <label class="cf-item"><input type="checkbox" checked> x402 Payment</label>
+            <label class="cf-item"><input type="checkbox" checked> UAP Delegatable</label>
+          </div>
+          <div class="cf-group">
+            <div class="cf-label">Availability</div>
+            <label class="cf-item"><input type="checkbox" checked onchange="filterCatalog()"> In Stock</label>
+            <label class="cf-item"><input type="checkbox" onchange="filterCatalog()"> Out of Stock</label>
+          </div>
+          <button class="btn-primary" style="width:100%;font-size:12px;padding:8px" onclick="navigate('agents')">Buy via Agent →</button>
+        </div>
+
+        <!-- Grid -->
+        <div class="catalog-grid">
+          <div class="catalog-toolbar">
+            <div class="catalog-count" id="catalog-count">Showing 6 of 12 SKUs</div>
+            <select class="catalog-sort" onchange="sortCatalog(this.value)">
+              <option value="relevance">Sort: Relevance</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="name">Name A–Z</option>
+            </select>
+          </div>
+          <div class="catalog-cards" id="catalog-cards"></div>
+
+          <!-- API Response Box -->
+          <div class="api-response-box" id="api-response-box" style="display:none">
+            <div class="api-response-header">
+              <span class="api-endpoint">GET /acp/catalog/search?q=cloud+storage&amp;agent_id=nexus-negotiator-v2</span>
+              <span class="api-status">200 OK · 142ms</span>
+            </div>
+            <pre id="api-json-output" style="white-space:pre-wrap;line-height:1.6"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SECURITY PAGE ══ -->
+    <div class="page" id="page-security">
+      <div class="page-header">
+        <div><div class="page-title">Security</div><div class="page-sub">AP2 Authorization · Verifiable Credentials · Compliance Monitoring</div></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-secondary" onclick="refreshSecLog()">↻ Refresh</button>
+          <button class="btn-primary">Export Report</button>
+        </div>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="sec-status-bar">
+        <div class="sec-status-icon">🟢</div>
+        <div><div class="sec-status-text">All Systems Secured</div><div class="sec-status-sub">AP2 Node Active · Cryptographic integrity verified · Last scan 14 seconds ago</div></div>
+        <div class="sec-status-badge"><span class="badge badge-green">SECURED</span></div>
+      </div>
+
+      <div class="security-layout">
+        <!-- AP2 Authorization Service -->
+        <div class="card">
+          <div class="card-title">🔐 AP2 Authorization Service <span class="badge badge-green" style="margin-left:auto">ACTIVE</span></div>
+          <div class="vc-visual">
+            <div class="vc-visual-icon">💎</div>
+            <div class="vc-visual-title">Verifiable Credential Generated</div>
+            <div class="vc-visual-sub">Cryptographically secured intent mandate</div>
+            <div class="vc-credential-id">
+              <div style="font-size:9px;color:var(--text3);margin-bottom:3px">CREDENTIAL ISSUER ID</div>
+              VC-9A4F-22B1-88C0<br>
+              <span style="color:var(--text3)">did:nexus:ap2:node-01</span>
+            </div>
+          </div>
+          <div class="card-title" style="margin-top:14px">📊 Spending Limits Enforced</div>
+          <div style="font-size:26px;font-weight:800;color:var(--text);margin:6px 0">₹5,000 <span style="font-size:13px;font-weight:500;color:var(--text2)">Max Authorization</span></div>
+          <div class="progress-bar" style="height:7px;margin:8px 0 4px"><div class="progress-fill pf-indigo" style="width:10%"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text2)"><span>₹500 authorized</span><span>10% UTILIZED</span></div>
+          <div class="countdown-box" style="margin-top:12px">
+            <div><div style="font-size:10px;color:var(--text2)">⏱ Mandate Expiry</div><div style="font-size:9px;color:var(--text3)">Authorized for Merchant catalog</div></div>
+            <div style="text-align:right"><div class="countdown-time" id="sec-countdown">23:41:22</div><div style="font-size:9px;color:var(--text3);letter-spacing:.05em">REMAINING</div></div>
+          </div>
+        </div>
+
+        <!-- Authorization Context -->
+        <div class="card">
+          <div class="card-title">📋 Authorization Context</div>
+          <div class="health-row"><span class="health-key">SESSION INIT</span><span class="health-val health-ms" id="sec-sess-time">14:02:05.112</span></div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.5">Agent 1 Negotiator requested bounded purchase consent.</div>
+          <div class="health-row"><span class="health-key">USER ACTION</span><span class="health-val health-ms">14:02:12.844</span></div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:14px;line-height:1.5">Mandate signed by user. Cryptographic Intent Mandate generated.</div>
+          <div class="divider"></div>
+          <div class="card-title">🔑 Active Keys</div>
+          <div class="key-row"><div class="key-icon">🔑</div><div class="key-info"><div class="key-name">Primary Signing Key</div><div class="key-fp">SHA-256: 9a4f:3c1b:88c0:f2d1</div></div><div class="key-status"><span class="badge badge-green" style="font-size:9px">ACTIVE</span></div></div>
+          <div class="key-row"><div class="key-icon">🗝</div><div class="key-info"><div class="key-name">AP2 Delegation Key</div><div class="key-fp">SHA-256: 22b1:9a4f:0d3e:71cc</div></div><div class="key-status"><span class="badge badge-indigo" style="font-size:9px">DELEGATED</span></div></div>
+          <div class="key-row"><div class="key-icon">🔒</div><div class="key-info"><div class="key-name">UAP Session Token</div><div class="key-fp">IR-992-B-XYZ · Razorpay scoped</div></div><div class="key-status"><span class="badge badge-sky" style="font-size:9px">BOUND</span></div></div>
+          <div class="divider"></div>
+          <div class="card-title">🚨 Risk Assessment</div>
+          <div class="health-row"><span class="health-key">Current Session Risk</span><span><div class="risk-meter"><div class="risk-fill-low"></div></div><span class="risk-label risk-low" style="font-size:9px">LOW</span></span></div>
+          <div class="health-row"><span class="health-key">Mandate Anomalies</span><span class="health-val health-ok">0 detected</span></div>
+          <div class="health-row"><span class="health-key">Failed Auth Attempts</span><span class="health-val health-ok">0 (24h)</span></div>
+        </div>
+
+        <!-- Security & Compliance Log -->
+        <div class="card">
+          <div class="card-title">📜 Security &amp; Compliance Log</div>
+          <div class="sec-log" id="sec-log-container"></div>
+        </div>
+
+        <!-- Policy Engine -->
+        <div class="card">
+          <div class="card-title">📋 Active Policies</div>
+          <div class="policy-row">
+            <div><div class="policy-name">Spending Bound Enforcement</div><div class="policy-scope">All mandates · Max ₹5,000 per session</div></div>
+            <div class="policy-status"><span class="badge badge-green">ENFORCED</span></div>
+          </div>
+          <div class="policy-row">
+            <div><div class="policy-name">24-Hour Session Expiry</div><div class="policy-scope">Automatic revocation after 24h</div></div>
+            <div class="policy-status"><span class="badge badge-green">ENFORCED</span></div>
+          </div>
+          <div class="policy-row">
+            <div><div class="policy-name">Merchant Scope Restriction</div><div class="policy-scope">Catalog purchases only · No wire transfers</div></div>
+            <div class="policy-status"><span class="badge badge-green">ENFORCED</span></div>
+          </div>
+          <div class="policy-row">
+            <div><div class="policy-name">UPI UAP Delegation</div><div class="policy-scope">Agent cannot self-initiate payments</div></div>
+            <div class="policy-status"><span class="badge badge-green">ENFORCED</span></div>
+          </div>
+          <div class="policy-row">
+            <div><div class="policy-name">Audit Trail Persistence</div><div class="policy-scope">All actions logged to Cloud PostgreSQL</div></div>
+            <div class="policy-status"><span class="badge badge-green">ENFORCED</span></div>
+          </div>
+          <div class="policy-row">
+            <div><div class="policy-name">Cart Preservation on Failure</div><div class="policy-scope">Rollback-safe cart state on payment error</div></div>
+            <div class="policy-status"><span class="badge badge-green">ENFORCED</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end page-container -->
+</div><!-- end main-app -->
+
+<!-- CONFETTI -->
+<div class="confetti-wrap" id="confetti-wrap"></div>
+
+<!-- NEW MANDATE MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">+ New Mandate</div>
+      <button class="modal-close" onclick="closeNewMandateModal()">✕</button>
+    </div>
+    <div class="form-row"><div class="form-label">Agent</div><select class="form-select"><option>Agent 1 — Negotiator</option><option>Agent 2 — Executor</option><option>Agent 3 — Auditor</option></select></div>
+    <div class="form-row"><div class="form-label">Scope</div><select class="form-select"><option>Merchant Catalog Purchases</option><option>Cloud Storage Only</option><option>Support SLA Only</option><option>All Products</option></select></div>
+    <div class="form-row"><div class="form-label">Spending Limit (₹)</div><input class="form-input" type="number" placeholder="5000" value="5000" min="100" max="100000"/></div>
+    <div class="form-row"><div class="form-label">Duration</div><select class="form-select"><option>24 Hours</option><option>12 Hours</option><option>6 Hours</option><option>1 Hour</option></select></div>
+    <div class="form-row"><div class="form-label">Delegation</div><select class="form-select"><option>UPI UAP Simulated</option><option>UPI Direct</option><option>Razorpay Test</option></select></div>
+    <div class="form-row"><div class="form-label">Notes (optional)</div><input class="form-input" type="text" placeholder="e.g. Q4 procurement budget"/></div>
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button class="btn-secondary" style="flex:1" onclick="closeNewMandateModal()">Cancel</button>
+      <button class="btn-primary" style="flex:2" onclick="createMandate()">Sign &amp; Create Mandate</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+// BACKGROUND CANVAS
+// ══════════════════════════════════════════════════
+(function(){
+  const cv=document.getElementById('bg-canvas'),ctx=cv.getContext('2d');
+  let W,H,nodes=[];
+  function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;}
+  function mk(){return{x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.22,vy:(Math.random()-.5)*.22,r:Math.random()*1.8+.8};}
+  function init(){resize();nodes=[];for(let i=0;i<55;i++)nodes.push(mk());}
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    nodes.forEach(n=>{
+      n.x+=n.vx;n.y+=n.vy;
+      if(n.x<0||n.x>W)n.vx*=-1;if(n.y<0||n.y>H)n.vy*=-1;
+      ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+      ctx.fillStyle='rgba(99,102,241,0.32)';ctx.fill();
+    });
+    for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
+      const dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<120){ctx.beginPath();ctx.moveTo(nodes[i].x,nodes[i].y);ctx.lineTo(nodes[j].x,nodes[j].y);ctx.strokeStyle=`rgba(99,102,241,${0.11*(1-d/120)})`;ctx.lineWidth=.6;ctx.stroke();}
+    }
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',init);
+  init();draw();
+})();
+
+// ══════════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════════
+let currentPage = 'dashboard';
+function navigate(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const el=document.getElementById('page-'+page);
+  if(el)el.classList.add('active');
+  const nav=document.getElementById('nav-'+page);
+  if(nav)nav.classList.add('active');
+  currentPage=page;
+  if(page==='mandates')renderMandateTable(mandates);
+  if(page==='security')initSecLog();
+  if(page==='agents'&&!chatInitialized)startChat();
+  if(page==='catalog')initCatalog();
+}
+
+// ── CATALOG DATA & RENDERING ──
+const catalogSKUs=[
+  {id:'SKU-CS-1TB',name:'Enterprise Cloud Storage – 1TB',desc:'Secure, redundant object storage with 99.99% SLA. Geo-replicated across 3 zones.',price:1200,category:'Storage',stock:true,emoji:'💾',color:'c-indigo',tags:['storage','redundant','geo-replicated'],upsells:['SKU-DR-500','SKU-CDN-GLOB'],agent_score:0.97},
+  {id:'SKU-SUP-SLA',name:'Premium Support SLA',desc:'24×7 dedicated support with guaranteed <1hr response. Named engineer assigned.',price:3500,category:'Support',stock:true,emoji:'🛡',color:'c-emerald',tags:['support','24x7','sla'],upsells:['SKU-MON-ADV','SKU-SEC-AUD'],agent_score:0.94},
+  {id:'SKU-DR-500',name:'Disaster Recovery – 500GB',desc:'Automated backups, point-in-time restore, and cross-region failover.',price:800,category:'Storage',stock:true,emoji:'🔄',color:'c-amber',tags:['backup','recovery','failover'],upsells:['SKU-CS-1TB'],agent_score:0.89},
+  {id:'SKU-CDN-GLOB',name:'Global CDN Add-on',desc:'Edge delivery across 40 PoPs worldwide. Reduces latency by up to 78%.',price:400,category:'Networking',stock:true,emoji:'🌐',color:'c-sky',tags:['cdn','edge','performance'],upsells:['SKU-SEC-WAF'],agent_score:0.85},
+  {id:'SKU-SEC-WAF',name:'Web Application Firewall',desc:'Layer 7 DDoS protection, bot mitigation, OWASP Top 10 rules included.',price:2200,category:'Security',stock:true,emoji:'🔥',color:'c-rose',tags:['waf','ddos','security'],upsells:['SKU-SEC-AUD'],agent_score:0.91},
+  {id:'SKU-MON-ADV',name:'Advanced Monitoring Suite',desc:'Real-time metrics, APM traces, log aggregation, and AI anomaly detection.',price:1500,category:'Analytics',stock:true,emoji:'📊',color:'c-violet',tags:['monitoring','apm','analytics'],upsells:['SKU-SUP-SLA'],agent_score:0.88},
+  {id:'SKU-SEC-AUD',name:'Security Audit & Compliance',desc:'Monthly automated security audit. SOC2, ISO 27001 compliance reports.',price:900,category:'Security',stock:false,emoji:'📋',color:'c-indigo',tags:['audit','compliance','soc2'],upsells:['SKU-SEC-WAF'],agent_score:0.82},
+  {id:'SKU-DB-MGMT',name:'Managed Database Cluster',desc:'Auto-scaled PostgreSQL cluster with read replicas, automated vacuuming.',price:2800,category:'Storage',stock:true,emoji:'🗄',color:'c-emerald',tags:['database','postgresql','managed'],upsells:['SKU-MON-ADV'],agent_score:0.93},
+];
+let catalogInitialized=false;
+function initCatalog(){
+  if(!catalogInitialized){catalogInitialized=true;renderCatalog(catalogSKUs);}
+}
+function renderCatalog(skus){
+  const container=document.getElementById('catalog-cards');if(!container)return;
+  container.innerHTML=skus.map(s=>`
+    <div class="catalog-card" onclick="selectCatalogSKU('${s.id}')">
+      <div class="catalog-card-img ${s.color}">${s.emoji}<span class="sku-badge">${s.id}</span></div>
+      <div class="catalog-card-body">
+        <div class="cc-name">${s.name}</div>
+        <div class="cc-desc">${s.desc}</div>
+        <div class="cc-tags">${s.tags.map(t=>`<span class="cc-tag cc-tag-${s.color.replace('c-','')}">+${t}</span>`).join('')}
+          <span class="cc-tag" style="background:rgba(16,185,129,0.1);color:var(--emerald)">agent:${s.agent_score}</span>
+          ${!s.stock?'<span class="cc-tag" style="background:rgba(244,63,94,0.1);color:var(--rose)">OUT OF STOCK</span>':''}
+        </div>
+        <div class="cc-footer">
+          <div><div class="cc-price">₹${s.price.toLocaleString('en-IN')}<span class="cc-per">/mo</span></div></div>
+          <button class="btn-add-cart" id="add-${s.id}" onclick="addToAgentCart(event,'${s.id}')" ${!s.stock?'disabled':''} style="${!s.stock?'opacity:.4;cursor:not-allowed':''}">${s.stock?'Add to Cart':'Unavailable'}</button>
+        </div>
+      </div>
+    </div>`).join('');
+  const cnt=document.getElementById('catalog-count');if(cnt)cnt.textContent=`Showing ${skus.length} of ${catalogSKUs.length} SKUs`;
+}
+function filterCatalog(){
+  const min=parseInt(document.getElementById('price-min')?.value||0);
+  const max=parseInt(document.getElementById('price-max')?.value||99999);
+  const filtered=catalogSKUs.filter(s=>s.price>=min&&s.price<=max);
+  renderCatalog(filtered);
+}
+function sortCatalog(val){
+  const sorted=[...catalogSKUs];
+  if(val==='price-asc')sorted.sort((a,b)=>a.price-b.price);
+  else if(val==='price-desc')sorted.sort((a,b)=>b.price-a.price);
+  else if(val==='name')sorted.sort((a,b)=>a.name.localeCompare(b.name));
+  renderCatalog(sorted);
+}
+function addToAgentCart(e,id){
+  e.stopPropagation();
+  const btn=document.getElementById('add-'+id);if(!btn)return;
+  btn.classList.add('added');btn.textContent='✓ Added';
+  showToast('✅ Added to agent cart. Start checkout session →');
+}
+function selectCatalogSKU(id){
+  const sku=catalogSKUs.find(s=>s.id===id);if(!sku)return;
+  showToast(`📦 ${sku.name} · ₹${sku.price}/mo · Agent Score: ${sku.agent_score}`);
+}
+function showApiResponse(){
+  const box=document.getElementById('api-response-box');if(!box)return;
+  const showing=box.style.display==='block';
+  box.style.display=showing?'none':'block';
+  if(!showing)renderApiJson();
+}
+function renderApiJson(){
+  const out=document.getElementById('api-json-output');if(!out)return;
+  const data={status:200,endpoint:'/acp/catalog/search',query:{q:'cloud storage',agent_id:'nexus-negotiator-v2',mandate_id:'M-9A4F-22B1',max_price:5000},response:{total_skus:8,matched:2,agent_readable:true,results:catalogSKUs.slice(0,2).map(s=>({sku_id:s.id,name:s.name,price_inr:s.price,category:s.category,in_stock:s.stock,agent_score:s.agent_score,tags:s.tags,upsell_graph:s.upsells,payment:{uap_delegatable:true,x402_ready:true,mandate_compatible:true}}))}};
+  out.innerHTML=syntaxHighlight(JSON.stringify(data,null,2));
+}
+function syntaxHighlight(json){
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("[^"]+"):/g,'<span class="json-key">$1</span>:')
+    .replace(/: ("[^"]*")/g,': <span class="json-str">$1</span>')
+    .replace(/: (\d+\.?\d*)/g,': <span class="json-num">$1</span>')
+    .replace(/: (true|false)/g,': <span class="json-bool">$1</span>')
+    .replace(/: (null)/g,': <span class="json-null">$1</span>');
+}
+
+// ══════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════
+function authenticate(){
+  const btn=document.getElementById('btn-auth');
+  btn.classList.add('loading');btn.innerHTML='⟳ &nbsp;Authenticating...';
+  setTimeout(()=>{
+    document.getElementById('login-screen').classList.add('hidden');
+    const app=document.getElementById('main-app');
+    app.style.display='flex';
+    setTimeout(()=>{app.classList.add('visible');startMandateCountdown();startSecCountdown();},50);
+  },1400);
+}
+
+// ══════════════════════════════════════════════════
+// MANDATE DATA
+// ══════════════════════════════════════════════════
+const mandates=[
+  {id:'M-9A4F-22B1',agent:'Agent 1',scope:'Merchant Catalog',limit:5000,spent:4700,expiry:'23:41:22',status:'active',vc:'VC-9A4F-22B1-88C0',delegation:'UPI UAP Simulated'},
+  {id:'M-7B3C-11D0',agent:'Agent 2',scope:'Cloud Storage',limit:2500,spent:600,expiry:'02:14:05',status:'expiring',vc:'VC-7B3C-11D0-44A1',delegation:'UPI Direct'},
+  {id:'M-4D1A-88F2',agent:'Agent 1',scope:'Support SLA',limit:5000,spent:1200,expiry:'20:33:10',status:'active',vc:'VC-4D1A-88F2-C3B0',delegation:'Razorpay Test'},
+  {id:'M-2E9B-55C7',agent:'Agent 3',scope:'All Products',limit:10000,spent:10000,expiry:'EXPIRED',status:'expired',vc:'VC-2E9B-55C7-B8F2',delegation:'UPI UAP Simulated'},
+  {id:'M-1F3C-99D4',agent:'Agent 2',scope:'Merchant Catalog',limit:3000,spent:2950,expiry:'EXPIRED',status:'expired',vc:'VC-1F3C-99D4-A2E0',delegation:'UPI Direct'},
+];
+let mandateFilter='all';
+
+function renderMandateTable(data){
+  const filter=mandateFilter;
+  const search=document.querySelector('.search-input')?.value?.toLowerCase()||'';
+  const filtered=data.filter(m=>{
+    const matchFilter=filter==='all'||m.status===filter;
+    const matchSearch=!search||m.id.toLowerCase().includes(search)||m.agent.toLowerCase().includes(search)||m.scope.toLowerCase().includes(search);
+    return matchFilter&&matchSearch;
+  });
+  const tbody=document.getElementById('mandate-tbody');
+  if(!tbody)return;
+  tbody.innerHTML=filtered.map(m=>{
+    const pct=Math.min(100,Math.round(m.spent/m.limit*100));
+    const fillColor=m.status==='expiring'?'#f59e0b':m.status==='expired'?'#f43f5e':'#6366f1';
+    const badgeClass=m.status==='active'?'badge-green':m.status==='expiring'?'badge-amber':'badge-rose';
+    const badgeText=m.status==='active'?'ACTIVE':m.status==='expiring'?'EXPIRING':'EXPIRED';
+    return `<tr onclick="selectMandate('${m.id}')">
+      <td><span class="mandate-id-cell">${m.id}</span></td>
+      <td style="color:var(--text2)">${m.agent}</td>
+      <td style="color:var(--text2);font-size:11px">${m.scope}</td>
+      <td><div class="spend-mini"><div style="font-size:11px;font-family:var(--mono)">₹${m.spent.toLocaleString('en-IN')} / ₹${m.limit.toLocaleString('en-IN')}</div><div class="spend-mini-bar"><div class="spend-mini-fill" style="width:${pct}%;background:${fillColor};height:100%;border-radius:2px"></div></div></div></td>
+      <td style="font-family:var(--mono);font-size:11px;color:${m.status==='expiring'?'var(--amber)':m.status==='expired'?'var(--rose)':'var(--text2)'}">${m.expiry}</td>
+      <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterMandates(val){renderMandateTable(mandates);}
+function setFilter(btn,f){
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');mandateFilter=f;renderMandateTable(mandates);
+}
+
+function selectMandate(id){
+  const m=mandates.find(x=>x.id===id);
+  if(!m)return;
+  const pct=Math.min(100,Math.round(m.spent/m.limit*100));
+  const remaining=m.limit-m.spent;
+  const badgeClass=m.status==='active'?'badge-green':m.status==='expiring'?'badge-amber':'badge-rose';
+  const badgeText=m.status.toUpperCase();
+  document.getElementById('mandate-detail-content').innerHTML=`
+    <div class="mdc-header"><span class="mdc-id">${m.id}</span><span class="badge ${badgeClass}">${badgeText}</span></div>
+    <div class="mdc-field"><span class="mdc-key">Agent</span><span class="mdc-val">${m.agent}</span></div>
+    <div class="mdc-field"><span class="mdc-key">Scope</span><span class="mdc-val">${m.scope}</span></div>
+    <div class="mdc-field"><span class="mdc-key">Delegation</span><span class="mdc-val">${m.delegation}</span></div>
+    <div class="mdc-field"><span class="mdc-key">Limit</span><span class="mdc-val">₹${m.limit.toLocaleString('en-IN')}</span></div>
+    <div class="mdc-field"><span class="mdc-key">Spent</span><span class="mdc-val">₹${m.spent.toLocaleString('en-IN')}</span></div>
+    <div class="mdc-field"><span class="mdc-key">Remaining</span><span class="mdc-val" style="color:${remaining>0?'var(--emerald)':'var(--rose)'}">₹${remaining.toLocaleString('en-IN')}</span></div>
+    <div class="mdc-field"><span class="mdc-key">Expiry</span><span class="mdc-val" style="color:${m.status==='expired'?'var(--rose)':m.status==='expiring'?'var(--amber)':'var(--emerald)'}">${m.expiry}</span></div>
+    <div style="margin:10px 0 4px;font-size:10px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase">Verifiable Credential</div>
+    <div class="crypto-box">${m.vc}</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:6px">Spending Progress</div>
+    <div class="progress-bar" style="height:6px"><div class="progress-fill ${m.status==='expired'?'':'pf-indigo'}" style="width:${pct}%;background:${m.status==='expired'?'#f43f5e':m.status==='expiring'?'#f59e0b':''}"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text2);margin-top:4px;font-family:var(--mono)"><span>₹${m.spent.toLocaleString('en-IN')} used</span><span>${pct}%</span></div>
+  `;
+}
+
+// ══════════════════════════════════════════════════
+// MANDATE COUNTDOWN (Mandates + Security pages)
+// ══════════════════════════════════════════════════
+let mandateCountdownSecs=85282;
+function startMandateCountdown(){
+  setInterval(()=>{
+    mandateCountdownSecs=Math.max(0,mandateCountdownSecs-1);
+    const t=fmtTimer(mandateCountdownSecs);
+    const mc=document.getElementById('mandate-countdown');
+    const sc=document.getElementById('sec-countdown');
+    if(mc)mc.textContent=t;
+    if(sc)sc.textContent=t;
+  },1000);
+}
+
+// ══════════════════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════════════════
+function openNewMandateModal(){document.getElementById('modal-overlay').classList.add('open');}
+function closeNewMandateModal(){document.getElementById('modal-overlay').classList.remove('open');}
+function closeModal(e){if(e.target===document.getElementById('modal-overlay'))closeNewMandateModal();}
+function createMandate(){
+  closeNewMandateModal();
+  const id='M-'+Math.random().toString(16).slice(2,6).toUpperCase()+'-'+Math.random().toString(16).slice(2,6).toUpperCase();
+  mandates.unshift({id,agent:'Agent 1',scope:'Merchant Catalog',limit:5000,spent:0,expiry:'24:00:00',status:'active',vc:'VC-'+id.slice(2),delegation:'UPI UAP Simulated'});
+  if(currentPage==='mandates')renderMandateTable(mandates);
+  showToast('✅ Mandate '+id+' created and signed');
+}
+
+function showToast(msg){
+  const t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:24px;right:24px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:#10b981;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:300;animation:slideInRight .3s ease;backdrop-filter:blur(12px)';
+  t.textContent=msg;document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3500);
+}
+
+// ══════════════════════════════════════════════════
+// SECURITY LOG
+// ══════════════════════════════════════════════════
+const secLogEntries=[
+  {t:'14:02:13',code:'SIG_VERIFY_INIT',cls:'slc-indigo',msg:'Verifying user signature against public key...'},
+  {t:'14:02:14',code:'SIG_VERIFY_OK',cls:'slc-green',msg:'Signature valid. Intent authenticated.'},
+  {t:'14:02:14',code:'VC_MINT_REQ',cls:'slc-violet',msg:'Requesting Verifiable Credential generation.'},
+  {t:'14:02:15',code:'LIMIT_CHECK',cls:'slc-amber',msg:'Applying bound: max ₹5000, max duration 24h.'},
+  {t:'14:02:16',code:'VC_ISSUED',cls:'slc-violet',msg:'Credential VC-9A4F-22B1-88C0 signed and returned.'},
+  {t:'14:02:17',code:'DB_SYNC',cls:'slc-slate',msg:'Logging mandate to Cloud PostgreSQL.'},
+  {t:'14:02:18',code:'POLICY_CHK',cls:'slc-green',msg:'Merchant scope restriction verified.'},
+  {t:'14:02:19',code:'UAP_BIND',cls:'slc-sky',msg:'UAP delegation token bound to mandate.'},
+  {t:'14:02:21',code:'AP2_LOG',cls:'slc-indigo',msg:'AP2 and UAP verification checks logged.'},
+  {t:'14:02:25',code:'AUDIT_SYNC',cls:'slc-slate',msg:'Full audit trail pushed to PostgreSQL.'},
+  {t:'14:02:35',code:'HEARTBEAT',cls:'slc-green',msg:'AP2 node heartbeat OK. Integrity confirmed.'},
+  {t:'14:03:01',code:'SESS_ACTIVE',cls:'slc-green',msg:'Session M-9A4F-22B1 active. 23h 57m remaining.'},
+];
+function initSecLog(){
+  const container=document.getElementById('sec-log-container');
+  if(!container||container.children.length>0)return;
+  secLogEntries.forEach((e,i)=>{
+    setTimeout(()=>{
+      const el=document.createElement('div');el.className='sec-log-entry';
+      el.innerHTML=`<span class="sec-log-ts">${e.t}</span><span class="sec-log-code ${e.cls}">${e.code}</span><span class="sec-log-msg">${e.msg}</span>`;
+      container.appendChild(el);container.scrollTop=container.scrollHeight;
+    },i*80);
+  });
+}
+function refreshSecLog(){
+  const container=document.getElementById('sec-log-container');
+  if(!container)return;
+  container.innerHTML='';
+  const now=new Date().toLocaleTimeString('en-IN',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  setTimeout(()=>{
+    const el=document.createElement('div');el.className='sec-log-entry';
+    el.innerHTML=`<span class="sec-log-ts">${now}</span><span class="sec-log-code slc-green">REFRESH</span><span class="sec-log-msg">Security log refreshed. All systems nominal.</span>`;
+    container.appendChild(el);
+    initSecLog();
+  },400);
+  showToast('🔄 Security log refreshed');
+}
+function startSecCountdown(){}
+
+// ══════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════
+function fmtTimer(s){const h=String(Math.floor(s/3600)).padStart(2,'0'),m=String(Math.floor((s%3600)/60)).padStart(2,'0'),sec=String(s%60).padStart(2,'0');return`${h}:${m}:${sec}`;}
+function now(){return new Date().toLocaleTimeString('en-IN',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+function nowMs(){const d=new Date();return`${d.toLocaleTimeString('en-IN',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'})}.${String(d.getMilliseconds()).padStart(3,'0')}`;}
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+function escHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+// ══════════════════════════════════════════════════
+// AGENTS STATE MACHINE
+// ══════════════════════════════════════════════════
+const STATE={IDLE:'IDLE',SESSION_INIT:'SI',CONSENT:'CON',MANDATE_SIGNING:'MS',VC_ISSUING:'VCI',SESSION_AUTHORIZED:'SA',PRODUCT_SEARCH:'PS',CART_CREATED:'CC',UPSELL_PENDING:'UP',FINALIZE_REQUESTED:'FR',MANDATE_VALIDATED:'MV',UPI_DELEGATING:'UD',PAYMENT_MODAL:'PM',PAYMENT_PROCESSING:'PP',PAYMENT_SUCCESS:'SUC',PAYMENT_FAILURE:'FAIL'};
+let cs=STATE.IDLE,failureMode=false,expiryInterval=null,expirySeconds=86399,auditCount=0,chatInitialized=false;
+let cartBase=0,cartSKUs=[],upsellAdded=[];
+
+// Failure toggle
+function toggleFailure(){
+  if(cs===STATE.PAYMENT_PROCESSING||cs===STATE.PAYMENT_SUCCESS||cs===STATE.PAYMENT_FAILURE)return;
+  const t=document.getElementById('failure-toggle');failureMode=!failureMode;t.classList.toggle('on',failureMode);
+}
+
+// Audit
+const ATYPE={INFO:'at-INFO',REQ:'at-REQ',OK:'at-OK','OK 200':'at-OK','OK 201':'at-OK',YIELD:'at-YIELD',SESS:'at-SESS',AUTH:'at-AUTH',SIG_VERIFY_INIT:'at-SIG',SIG_VERIFY_OK:'at-SIG',VC_MINT_REQ:'at-VC',LIMIT_CHECK:'at-LIMIT',VC_ISSUED:'at-VC',DB_SYNC:'at-DB',ERROR:'at-ERROR',FAIL:'at-FAIL'};
+function addAudit(type,msg){
+  const entries=document.getElementById('audit-entries');if(!entries)return;
+  const el=document.createElement('div');el.className='audit-entry';
+  const cls=ATYPE[type]||'at-INFO';
+  el.innerHTML=`<span class="audit-ts">${now()}</span><span class="audit-type ${cls}">${type}</span><span class="audit-msg">${msg}</span>`;
+  entries.appendChild(el);entries.scrollTop=entries.scrollHeight;
+  auditCount++;const ac=document.getElementById('audit-count');if(ac)ac.textContent=auditCount;
+}
+
+// Chat
+const msgs=()=>document.getElementById('messages');
+function scrollMsgs(){const m=msgs();if(m)m.scrollTop=m.scrollHeight;}
+function addUserMsg(text){
+  const row=document.createElement('div');row.className='msg-row user';
+  row.innerHTML=`<div class="msg-avatar usr-av">AM</div><div class="msg-bubble"><div class="msg-sender">You</div>${escHtml(text)}</div>`;
+  msgs().appendChild(row);scrollMsgs();
+}
+async function agentMsg(html,d=880){
+  const row=document.createElement('div');row.className='msg-row';
+  row.innerHTML=`<div class="msg-avatar ag-av">A1</div><div class="msg-bubble"><div class="msg-sender">Agent 1 — Negotiator</div><div class="typing-indicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div>`;
+  msgs().appendChild(row);scrollMsgs();
+  await delay(d);
+  row.querySelector('.typing-indicator').outerHTML=html;
+  scrollMsgs();return row;
+}
+function setInputState(en,ph=''){
+  const inp=document.getElementById('chat-input'),btn=document.getElementById('btn-send');
+  if(!inp)return;inp.disabled=!en;btn.disabled=!en;
+  if(ph)inp.placeholder=ph;
+  if(en)setTimeout(()=>inp.focus(),100);
+}
+function setSdot(active,text){
+  const d=document.getElementById('agent-sdot'),t=document.getElementById('agent-stext');
+  if(d){d.className='sdot'+(active?' active':'');}
+  if(t)t.textContent=text;
+}
+function setCtxSess(desc){document.getElementById('ctx-sess-time').textContent=nowMs();const e=document.getElementById('ctx-sess-desc');e.className='ctx-desc';e.textContent=desc;}
+function setCtxUser(desc){document.getElementById('ctx-user-time').textContent=nowMs();const e=document.getElementById('ctx-user-desc');e.className='ctx-desc';e.textContent=desc;}
+function activateMandate(){
+  document.getElementById('mandate-inactive-lp').style.display='none';
+  document.getElementById('mandate-active-lp').style.display='block';
+  document.getElementById('vc-active-badge').style.display='inline-flex';
+  document.getElementById('mandate-card').classList.add('highlighted');
+  document.getElementById('auth-ctx-card').classList.add('highlighted');
+}
+function updateSpendBar(amt){
+  const pct=Math.min(100,Math.round(amt/5000*100));
+  const bar=document.getElementById('spend-bar');if(bar)bar.style.width=pct+'%';
+  const sa=document.getElementById('spend-auth');if(sa)sa.textContent=`₹${amt.toLocaleString('en-IN')} authorized`;
+  const sp=document.getElementById('spend-pct');if(sp)sp.textContent=`${pct}% UTILIZED`;
+}
+function startExpiryTimer(){
+  if(expiryInterval)clearInterval(expiryInterval);
+  expirySeconds=86399;
+  expiryInterval=setInterval(()=>{
+    expirySeconds--;
+    const el=document.getElementById('expiry-timer');
+    if(el)el.textContent=fmtTimer(expirySeconds);
+  },1000);
+}
+
+// Input handling
+function handleKeydown(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleSend();}}
+function handleSend(){
+  const inp=document.getElementById('chat-input');if(!inp)return;
+  const text=inp.value.trim();if(!text||inp.disabled)return;
+  inp.value='';processUserMessage(text);
+}
+async function processUserMessage(text){
+  setInputState(false);addUserMsg(text);
+  if(cs===STATE.IDLE){await doSessionInit();}
+  else if(cs===STATE.SESSION_AUTHORIZED||cs===STATE.PRODUCT_SEARCH){await doProductSearch(text);}
+  else if(cs===STATE.CART_CREATED||cs===STATE.UPSELL_PENDING){
+    if(/buy|checkout|confirm|pay|purchase|proceed|finalize|skip|no thanks|done/i.test(text))await doFinalizeRequested();
+    else{await agentMsg(`To finalize, click <em>Finalize Purchase</em> or type "checkout". You can also add the suggested items above.`);setInputState(true,'Type "checkout" or click Finalize...');}
+  }else{setInputState(true);}
+}
+
+// Flow
+function startChat(){
+  chatInitialized=true;cs=STATE.IDLE;
+  setSdot(false,'Initializing...');
+  addAudit('INFO','System initialized. Awaiting session start.');
+  setTimeout(async()=>{
+    setSdot(true,'Live Monitoring');
+    await agentMsg(`Welcome to <strong>Nexus Terminal</strong>. I'm <strong>Agent 1, your Negotiator</strong>.<br><br>I've initialized a new session context. To proceed with agentic checkout, I'll establish a bounded authorization session — scoped, time-limited, and cryptographically audited.<br><br>Ready to begin?`,600);
+    setInputState(true,'Type anything to start...');
+  },500);
+}
+
+async function doSessionInit(){
+  cs=STATE.SESSION_INIT;setCtxSess('Agent 1 Negotiator requested bounded purchase consent.');
+  addAudit('SESS','Agent 1 Negotiator requested bounded purchase consent.');
+  await agentMsg(`Initiating authorized session... Requesting <strong>bounded purchase consent</strong> from AP2 Authorization Service.<br><br>This session will be scoped to <em>merchant catalog purchases only</em> with a hard spending limit of ₹5,000 and 24-hour expiry.`);
+  const row=document.createElement('div');row.className='msg-row';
+  row.innerHTML=`<div class="msg-avatar ag-av">A1</div><div class="msg-bubble"><div class="msg-sender">Agent 1 — Negotiator</div>
+  <div class="inline-card"><div class="inline-card-title"><span>⚖</span>Bounded Purchase Consent</div>
+  <ul class="consent-list"><li>Spending limit: <strong>₹5,000 maximum</strong></li><li>Scope: Merchant catalog purchases only</li><li>Duration: <strong>24 hours</strong> from signing</li><li>Agent: Negotiator (read &amp; purchase)</li><li>Revocable at any time</li></ul>
+  <button id="btn-consent-action" class="btn-consent" onclick="doMandateSigning()">✓ &nbsp;I Consent</button></div></div>`;
+  msgs().appendChild(row);scrollMsgs();cs=STATE.CONSENT;
+}
+
+async function doMandateSigning(){
+  document.getElementById('btn-consent-action').disabled=true;
+  cs=STATE.MANDATE_SIGNING;setCtxUser('Mandate signed by user. Cryptographic Intent Mandate generated.');
+  addAudit('INFO','User accepted bounded purchase consent terms.');
+  await agentMsg(`Excellent. Generating your <strong>Cryptographic Intent Mandate</strong>. Please review and sign:`);
+  const row=document.createElement('div');row.className='msg-row';
+  row.innerHTML=`<div class="msg-avatar ag-av">A1</div><div class="msg-bubble"><div class="msg-sender">Agent 1 — Negotiator</div>
+  <div class="inline-card"><div class="inline-card-title"><span>📄</span>Cryptographic Intent Mandate</div>
+  <div class="mcard-row"><span class="mcard-key">Mandate ID</span><span class="mcard-val">M-9A4F-22B1</span></div>
+  <div class="mcard-row"><span class="mcard-key">Authorized Agent</span><span class="mcard-val">Nexus Negotiator v2.1</span></div>
+  <div class="mcard-row"><span class="mcard-key">Spending Limit</span><span class="mcard-val">₹5,000.00</span></div>
+  <div class="mcard-row"><span class="mcard-key">Scope</span><span class="mcard-val">Merchant Catalog</span></div>
+  <div class="mcard-row"><span class="mcard-key">Delegation</span><span class="mcard-val">UPI UAP Simulated</span></div>
+  <div class="mcard-row"><span class="mcard-key">Expiry</span><span class="mcard-val">24h from signing</span></div>
+  <button id="btn-sign-action" class="btn-sign" onclick="doVCIssuing()">✍ &nbsp;Sign Mandate</button></div></div>`;
+  msgs().appendChild(row);scrollMsgs();
+}
+
+async function doVCIssuing(){
+  document.getElementById('btn-sign-action').disabled=true;cs=STATE.VC_ISSUING;
+  addAudit('INFO','Mandate signed by user. Cryptographic Intent Mandate generated.');
+  addAudit('REQ','POST /auth/ap2/create_mandate');
+  await agentMsg(`Mandate signed. Forwarding to <strong>AP2 Authorization Service</strong> for Verifiable Credential issuance...`);
+  const vcRow=document.createElement('div');vcRow.className='msg-row';
+  vcRow.innerHTML=`<div class="msg-avatar ag-av">A1</div><div class="msg-bubble"><div class="msg-sender">Agent 1 — Negotiator</div><div class="vc-steps" id="vc-steps-container"></div></div>`;
+  msgs().appendChild(vcRow);scrollMsgs();
+  const steps=[
+    {d:600,type:'SIG_VERIFY_INIT',audit:'Verifying user signature against public key...',text:'→ Verifying signature against public key...'},
+    {d:900,type:'SIG_VERIFY_OK',audit:'Signature valid. Intent authenticated.',text:'✓ Signature valid. Intent authenticated.'},
+    {d:700,type:'VC_MINT_REQ',audit:'Requesting Verifiable Credential generation.',text:'→ Minting Verifiable Credential...'},
+    {d:800,type:'LIMIT_CHECK',audit:'Applying bound: max ₹5000, max duration 24h.',text:'→ Applying spending bounds (₹5,000 / 24h)...'},
+    {d:900,type:'VC_ISSUED',audit:'Credential VC-9A4F-22B1-88C0 signed and returned.',text:'✓ VC-9A4F-22B1-88C0 issued and signed.'},
+    {d:600,type:'DB_SYNC',audit:'Logging mandate to Cloud PostgreSQL.',text:'✓ Mandate logged to Cloud PostgreSQL.'},
+  ];
+  const cont=document.getElementById('vc-steps-container');
+  for(const step of steps){
+    await delay(step.d);
+    const s=document.createElement('div');
+    s.className='vc-step'+(step.type.includes('OK')||step.type.includes('ISSUED')||step.type.includes('DB')?' done':'');
+    s.textContent=step.text;cont.appendChild(s);scrollMsgs();addAudit(step.type,step.audit);
+  }
+  await delay(800);await doSessionAuthorized();
+}
+
+async function doSessionAuthorized(){
+  cs=STATE.SESSION_AUTHORIZED;activateMandate();startExpiryTimer();
+  const row=document.createElement('div');row.className='msg-row';
+  row.innerHTML=`<div class="msg-avatar ag-av">A1</div><div class="msg-bubble"><div class="msg-sender">Agent 1 — Negotiator</div>
+  <div class="auth-banner"><div class="auth-banner-title">✅ Session Authorized</div>
+  <div style="font-size:12px;color:var(--text2)">Up to <strong>₹5,000</strong> · Merchant Catalog · 24 hours</div>
+  <div class="auth-banner-vc">VC: VC-9A4F-22B1-88C0 · Mandate: M-9A4F-22B1</div></div></div>`;
+  msgs().appendChild(row);scrollMsgs();
+  await delay(500);
+  await agentMsg(`Your session is now fully authorized and cryptographically bound.<br><br>What products are you looking for today? I'll search the merchant catalog via ACP API.`);
+  setInputState(true,'Ask for products (e.g. "cloud storage and support plan")...');
+}
+
+async function doProductSearch(query){
+  cs=STATE.PRODUCT_SEARCH;setInputState(false,'Searching catalog...');
+  addAudit('REQ',`GET /acp/catalog/search?q=${encodeURIComponent(query)}`);
+  await agentMsg(`Searching merchant catalog via <strong>ACP API</strong> for <em>"${escHtml(query)}"</em>...`);
+  const shimRow=document.createElement('div');shimRow.className='msg-row';
+  shimRow.innerHTML=`<div class="msg-avatar ag-av">A1</div><div class="msg-bubble"><div class="msg-sender">Agent 1 — Negotiator</div><div class="shimmer-card"></div></div>`;
+  msgs().appendChild(shimRow);scrollMsgs();
+  
+  const q = query.toLowerCase();
+  cartSKUs = catalogSKUs.filter(s => s.stock && (s.name.toLowerCase().includes(q) || s.desc.toLowerCase().includes(q) || s.tags.some(t => t.includes(q)) || s.category.toLowerCase().includes(q)));
+  
+  if (cartSKUs.length === 0) {
+     cartSKUs = catalogSKUs.slice(0, 1); 
+  } else if (cartSKUs.length > 2) {
+     cartSKUs = cartSKUs.slice(0, 2); 
+  }
+
+  await delay(1600);shimRow.remove();
+  addAudit('OK 200',`Returned ${cartSKUs.length} matching SKUs.`);
+  await doCartCreated();
+}
+
+async function doCartCreated(){
+  cs=STATE.CART_CREATED;addAudit('REQ','POST /acp/cart/create');
+  await agentMsg(`Found <strong>${cartSKUs.length} matching product${cartSKUs.length>1?'s':''}</strong>. Creating your cart:`);
+  
+  cartBase = cartSKUs.reduce((sum, sku) => sum + sku.price, 0);
+  
+  const prodHTML = cartSKUs.map(sku => `
+  <div class="product-card"><div><div class="product-name">${sku.emoji} ${sku.name}</div><div class="product-desc">${sku.desc}</div></div><div class="product-price">₹${sku.price.toLocaleString('en-IN')}</div></div>
+  `).join('');
+
+  const prodRow=document.createElement('div');prodRow.className='msg-row';
+  prodRow.innerHTML=`<div class="msg-avatar ag-av">A1</div><div class="msg-bubble" style="max-width:480px"><div class="msg-sender">Agent 1 — Negotiator</div>
+  ${prodHTML}
+  <div class="cart-summary">
+    <div class="cart-total-row"><span style="font-size:12px;font-weight:600;color:var(--text2)">Total Estimated Cart</span><span class="cart-total" id="cart-total-display">₹${cartBase.toLocaleString('en-IN')}</span></div>
+    <div class="cart-within" id="cart-within-label">✓ Within mandate limit (₹5,000)</div>
+    <button id="btn-finalize-action" class="btn-finalize" onclick="doFinalizeRequested()">🛒 &nbsp;Finalize Purchase</button>
+  </div></div>`;
+  msgs().appendChild(prodRow);scrollMsgs();
+  await delay(400);
+  addAudit('OK 201',`Cart created. Total: ₹${cartBase.toLocaleString('en-IN')}.`);
+  addAudit('YIELD','Awaiting submission for payment...');
+  updateSpendBar(cartBase);
+  
+  const upsellCandidates = [];
+  cartSKUs.forEach(sku => {
+    sku.upsells.forEach(uid => {
+      if(!cartSKUs.find(c=>c.id===uid) && !upsellCandidates.includes(uid)) upsellCandidates.push(uid);
+    });
+  });
+  
+  const validUpsells = upsellCandidates.map(uid => catalogSKUs.find(s=>s.id===uid)).filter(s => s && s.stock && (cartBase + s.price <= 5000));
+
+  if (validUpsells.length > 0) {
+    setInputState(false,'Analysing upsell opportunities...');
+    await delay(1400);
+    await doUpsell(validUpsells);
+  } else {
+    setInputState(true,'Type "checkout" or click Finalize Purchase...');
+  }
+}
+
+async function doUpsell(upsells){
+  cs=STATE.UPSELL_PENDING;
+  const suggestions = upsells.slice(0, 2);
+  const remaining = 5000 - cartBase;
+  const potentialRev = suggestions.reduce((sum, s)=>sum+s.price, 0);
+
+  addAudit('INFO','UPSELL_TRIGGERED: ACP upsell graph queried for cross-sell candidates.');
+  addAudit('REQ',`GET /acp/catalog/upsell?cart=${cartSKUs.map(s=>s.id).join(',')}&mandate_remaining=${remaining}`);
+  await agentMsg(`🔍 <strong>Upsell Analysis:</strong> Based on your cart, I identified complementary products that other buyers frequently add. Adding these stays within your ₹5,000 mandate:`,700);
+  addAudit('OK 200',`Returned ${suggestions.length} upsell candidates.`);
+  
+  const itemsHTML = suggestions.map(s => `
+      <div class="upsell-item">
+        <div><div class="upsell-item-name">${s.emoji} ${s.name}</div><div class="upsell-item-desc">${s.desc.substring(0,42)}...</div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+          <div class="upsell-item-price">₹${s.price.toLocaleString('en-IN')}</div>
+          <button class="btn-add-upsell" id="upsell-btn-${s.id}" onclick="addUpsellItem(event,'${s.id}',${s.price},'${s.emoji} ${s.name}')">+ Add</button>
+        </div>
+      </div>
+  `).join('');
+
+  const upsellRow=document.createElement('div');upsellRow.className='msg-row';
+  upsellRow.innerHTML=`<div class="msg-avatar ag-av">A1</div><div class="msg-bubble" style="max-width:490px"><div class="msg-sender">Agent 1 — Negotiator</div>
+  <div class="upsell-card">
+    <div class="upsell-header"><span style="font-size:18px">⚡</span><div><div class="upsell-title">Recommended Add-ons</div></div></div>
+    <div class="upsell-sub">Customers who bought your items also added these. <strong>+₹${potentialRev.toLocaleString('en-IN')} merchant revenue.</strong></div>
+    <div class="upsell-revenue">📈 Merchant revenue uplift: +₹${potentialRev.toLocaleString('en-IN')}</div>
+    <div class="upsell-items">
+      ${itemsHTML}
+    </div>
+    <div id="upsell-cart-update" class="upsell-cart-update"></div>
+    <div style="margin-top:4px">
+      <button class="btn-skip-upsell" onclick="skipUpsell()">Skip — Proceed to checkout</button>
+    </div>
+  </div></div>`;
+  msgs().appendChild(upsellRow);scrollMsgs();
+  setInputState(true,'Type "checkout" to skip, or add items above...');
+}
+
+function addUpsellItem(e,id,price,name){
+  e.stopPropagation();
+  const btn=document.getElementById(`upsell-btn-${id}`);if(!btn||btn.classList.contains('added'))return;
+  btn.classList.add('added');btn.textContent='✓ Added';
+  upsellAdded.push({id,price,name});
+  cartBase+=price;
+  const update=document.getElementById('upsell-cart-update');
+  if(update){
+    update.style.display='block';
+    update.innerHTML=`✅ Cart updated: <strong>₹${cartBase.toLocaleString('en-IN')}</strong> total · ${upsellAdded.length} add-on(s)`;
+  }
+  const ctd=document.getElementById('cart-total-display');
+  if(ctd)ctd.textContent=`₹${cartBase.toLocaleString('en-IN')}`;
+  updateSpendBar(cartBase);
+  addAudit('INFO',`UPSELL_ACCEPTED: ${name} · ₹${price} added to cart.`);
+  addAudit('REQ',`POST /acp/cart/update {cart_total: ${cartBase}}`);
+  addAudit('OK 200',`Cart updated. New total: ₹${cartBase}. Mandate remaining: ₹${5000-cartBase}.`);
+  showToast(`✅ Added ${name} · Cart: ₹${cartBase.toLocaleString('en-IN')}`);
+}
+
+async function skipUpsell(){
+  addAudit('INFO','UPSELL_SKIPPED: User proceeded without add-ons.');
+  await doFinalizeRequested();
+}
+
+async function doFinalizeRequested(){
+  const btn=document.getElementById('btn-finalize-action');if(btn)btn.disabled=true;
+  cs=STATE.FINALIZE_REQUESTED;setInputState(false);
+  addAudit('INFO','User initiated finalize purchase.');
+  const total=cartBase;
+  await agentMsg(`Submitting cart (<strong>₹${total.toLocaleString('en-IN')}</strong>) for payment. <strong>Validating mandate scope</strong> and initiating UPI delegation...`);
+  addAudit('REQ','POST /mandate/validate_scope');
+  await delay(1200);await doMandateValidated();
+}
+
+async function doMandateValidated(){
+  cs=STATE.MANDATE_VALIDATED;
+  const remaining=5000-cartBase;
+  addAudit('OK',`Mandate valid. Remaining limit: ₹${remaining}.`);
+  await agentMsg(`✓ <strong>Mandate scope validated.</strong> Remaining limit: ₹${remaining}.<br>Translating mandate into UPI delegation token via UAP...`);
+  addAudit('REQ','POST /uap/translate_mandate');
+  await delay(1000);await doUPIDelegating();
+}
+
+async function doUPIDelegating(){
+  cs=STATE.UPI_DELEGATING;
+  addAudit('INFO','UPI delegation token generated. IR-992-B-XYZ.');
+  addAudit('REQ','POST /uap/verify_conditions');
+  const uapRow=document.createElement('div');uapRow.className='msg-row';
+  uapRow.innerHTML=`<div class="msg-avatar ag-av">A1</div><div class="msg-bubble" style="max-width:460px"><div class="msg-sender">Agent 1 — Negotiator</div>
+  <div class="uap-card">
+    <div class="uap-header"><span class="uap-title">UAP Payment Circle</span><span class="uap-status">⟳ Initiating Payment...</span></div>
+    <div class="uap-globe">
+      <svg width="100%" height="196" viewBox="0 0 400 196" xmlns="http://www.w3.org/2000/svg">
+        <defs><radialGradient id="gg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#1a2a4a" stop-opacity=".8"/><stop offset="100%" stop-color="#040810" stop-opacity="1"/></radialGradient><filter id="glow2"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+        <rect width="400" height="196" fill="url(#gg)"/>
+        <g opacity=".12" stroke="#6366f1" stroke-width=".5"><line x1="0" y1="40" x2="400" y2="40"/><line x1="0" y1="80" x2="400" y2="80"/><line x1="0" y1="120" x2="400" y2="120"/><line x1="0" y1="160" x2="400" y2="160"/><line x1="80" y1="0" x2="80" y2="196"/><line x1="160" y1="0" x2="160" y2="196"/><line x1="240" y1="0" x2="240" y2="196"/><line x1="320" y1="0" x2="320" y2="196"/></g>
+        <ellipse cx="200" cy="98" rx="82" ry="82" fill="none" stroke="rgba(99,102,241,.18)" stroke-width="1"/>
+        <ellipse cx="200" cy="98" rx="82" ry="38" fill="none" stroke="rgba(99,102,241,.12)" stroke-width="1"/>
+        <ellipse cx="200" cy="98" rx="38" ry="82" fill="none" stroke="rgba(99,102,241,.1)" stroke-width="1"/>
+        <line id="ul1" x1="200" y1="26" x2="284" y2="98" stroke="rgba(99,102,241,.3)" stroke-width="1.5" stroke-dasharray="7,4" opacity=".25"/>
+        <line id="ul2" x1="284" y1="98" x2="200" y2="168" stroke="rgba(99,102,241,.3)" stroke-width="1.5" stroke-dasharray="7,4" opacity=".25"/>
+        <line id="ul3" x1="200" y1="26" x2="116" y2="98" stroke="rgba(99,102,241,.3)" stroke-width="1.5" stroke-dasharray="7,4" opacity=".25"/>
+        <line id="ul4" x1="116" y1="98" x2="200" y2="168" stroke="rgba(99,102,241,.3)" stroke-width="1.5" stroke-dasharray="7,4" opacity=".25"/>
+        <circle id="un1" cx="200" cy="24" r="11" fill="#0d1a2f" stroke="rgba(99,102,241,.45)" stroke-width="1.5"/>
+        <text x="200" y="29" text-anchor="middle" fill="#6366f1" font-size="10" font-family="monospace">V</text>
+        <circle id="un2" cx="286" cy="98" r="11" fill="#0d1a2f" stroke="rgba(99,102,241,.45)" stroke-width="1.5"/>
+        <text x="286" y="103" text-anchor="middle" fill="#6366f1" font-size="10" font-family="monospace">T</text>
+        <circle id="un3" cx="200" cy="170" r="11" fill="#0d1a2f" stroke="rgba(99,102,241,.45)" stroke-width="1.5"/>
+        <text x="200" y="175" text-anchor="middle" fill="#6366f1" font-size="10" font-family="monospace">I</text>
+        <text id="ulbl1" x="200" y="12" text-anchor="middle" fill="rgba(148,163,184,.45)" font-size="9" font-family="sans-serif">Verification</text>
+        <text id="ulbl2" x="310" y="102" text-anchor="start" fill="rgba(148,163,184,.45)" font-size="9" font-family="sans-serif">Translation</text>
+        <text id="ulbl3" x="200" y="190" text-anchor="middle" fill="rgba(148,163,184,.45)" font-size="9" font-family="sans-serif">Initiation</text>
+      </svg>
+    </div>
+    <div class="uap-footer"><div class="uap-field">Intent Reg ID: <span>IR-992-B-XYZ</span></div><div class="uap-field">Target Gateway: <span>Razorpay Test API</span></div></div>
+  </div></div>`;
+  msgs().appendChild(uapRow);scrollMsgs();
+  await delay(900);litUAPNode(1);addAudit('OK','Agent and payment conditions verified.');
+  await delay(1000);litUAPNode(2);addAudit('REQ','POST /razorpay/test/initiate');
+  await delay(1000);litUAPNode(3);addAudit('OK','Payment authorization returned. [TEST MODE]');
+  await delay(700);addAudit('REQ','POST /ap2/log_verification');
+  await delay(400);addAudit('OK','AP2 and UAP checks logged.');
+  addAudit('REQ','POST /razorpay/log_response');
+  await delay(350);addAudit('OK','Razorpay request and response logged.');
+  await delay(600);await doPaymentModal();
+}
+
+function litUAPNode(n){
+  const node=document.getElementById(`un${n}`),lbl=document.getElementById(`ulbl${n}`);
+  if(!node)return;
+  node.setAttribute('fill','rgba(16,185,129,.18)');node.setAttribute('stroke','rgba(16,185,129,.85)');node.setAttribute('filter','url(#glow2)');
+  const txt=node.nextElementSibling;if(txt)txt.setAttribute('fill','#10b981');
+  if(lbl)lbl.setAttribute('fill','rgba(16,185,129,.8)');
+  if(n>=2){['ul1','ul3'].forEach(id=>{const l=document.getElementById(id);if(l)l.style.opacity='1';});}
+  if(n>=3){['ul2','ul4'].forEach(id=>{const l=document.getElementById(id);if(l)l.style.opacity='1';});}
+}
+
+async function doPaymentModal(){
+  cs=STATE.PAYMENT_MODAL;
+  await agentMsg(`✓ <strong>UPI delegation complete.</strong> Payment authorization ready. <span style="background:rgba(245,158,11,.18);color:#f59e0b;padding:1px 6px;border-radius:3px;font-size:10px">TEST MODE</span>`);
+  const total=cartBase;
+  const upsellNote=upsellAdded.length>0?`<div class="payment-field"><span class="pf-key">Add-ons</span><span class="pf-val" style="color:var(--amber)">${upsellAdded.map(u=>u.name.split(' ')[0]+' '+u.name.split(' ')[1]).join(', ')}</span></div>`:
+    `<div class="payment-field"><span class="pf-key">Add-ons</span><span class="pf-val" style="color:var(--text3)">None</span></div>`;
+  const pmRow=document.createElement('div');pmRow.className='msg-row';
+  pmRow.innerHTML=`<div class="msg-avatar ag-av">A1</div><div class="msg-bubble"><div class="msg-sender">Agent 1 — Negotiator</div>
+  <div class="payment-card">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">💳 Payment Authorization</div>
+    <div class="payment-test-note">⚠ TEST MODE — No real payment will be charged</div>
+    <div class="payment-field"><span class="pf-key">Amount</span><span class="pf-val">₹${total.toLocaleString('en-IN')}</span></div>
+    ${upsellNote}
+    <div class="payment-field"><span class="pf-key">Gateway</span><span class="pf-val">Razorpay Test API</span></div>
+    <div class="payment-field"><span class="pf-key">UPI</span><span class="pf-val">uap-delegate@nexus</span></div>
+    <div class="payment-field"><span class="pf-key">Mandate</span><span class="pf-val">M-9A4F-22B1 ✓</span></div>
+    <div class="payment-field"><span class="pf-key">Intent Reg</span><span class="pf-val">IR-992-B-XYZ</span></div>
+    <button id="btn-pay-action" class="btn-pay" onclick="doPayment()">Pay ₹${total.toLocaleString('en-IN')} (Test)</button>
+  </div></div>`;
+  msgs().appendChild(pmRow);scrollMsgs();setInputState(false,'Use the button above to pay...');
+}
+
+async function doPayment(){
+  const btn=document.getElementById('btn-pay-action');if(btn)btn.disabled=true;
+  cs=STATE.PAYMENT_PROCESSING;
+  const loadRow=document.createElement('div');loadRow.className='msg-row';
+  loadRow.innerHTML=`<div class="msg-avatar ag-av">A1</div><div class="msg-bubble"><div class="msg-sender">Agent 1 — Negotiator</div>
+  <div class="pay-loading"><div class="pay-spinner"></div><div style="font-size:12px;color:var(--text2)">${failureMode?'Contacting Razorpay gateway...':'Processing payment via Razorpay Test API...'}</div></div></div>`;
+  msgs().appendChild(loadRow);scrollMsgs();
+  await delay(failureMode?2200:1600);loadRow.remove();
+  if(failureMode)await doPaymentFailure();else await doPaymentSuccess();
+}
+
+async function doPaymentSuccess(){
+  cs=STATE.PAYMENT_SUCCESS;
+  const total=cartBase;
+  addAudit('OK','Payment confirmed. Razorpay Test Mode.');
+  addAudit('REQ','POST /acp/checkout/complete');
+  addAudit('OK','Order confirmed. ORD-2024-88471.');
+  addAudit('DB_SYNC','Completed checkout logged to PostgreSQL.');
+  if(upsellAdded.length>0)addAudit('INFO',`MERCHANT_REVENUE: +₹${upsellAdded.reduce((a,b)=>a+b.price,0)} from upsell add-ons. Total: ₹${total}.`);
+  const upsellSummary=upsellAdded.length>0?`<div class="success-field"><span style="color:var(--text3)">Add-ons</span><span style="font-family:var(--mono);color:var(--amber)">${upsellAdded.map(u=>u.name.split('–')[0].trim()).join(', ')}</span></div><div class="success-field"><span style="color:var(--text3)">Revenue Uplift</span><span style="font-family:var(--mono);color:var(--emerald)">+₹${upsellAdded.reduce((a,b)=>a+b.price,0)} for merchant 📈</span></div>`:'';
+  const row=document.createElement('div');row.className='msg-row';
+  row.innerHTML=`<div class="msg-avatar ag-av">A1</div><div class="msg-bubble"><div class="msg-sender">Agent 1 — Negotiator</div>
+  <div class="success-banner"><div class="success-icon">✅</div><div class="success-title">Purchase Confirmed!</div>
+  <div style="display:flex;flex-direction:column;gap:0">
+    <div class="success-field"><span style="color:var(--text3)">Order ID</span><span style="font-family:var(--mono)">ORD-2024-88471</span></div>
+    <div class="success-field"><span style="color:var(--text3)">Amount</span><span style="font-family:var(--mono)">₹${total.toLocaleString('en-IN')}</span></div>
+    ${upsellSummary}
+    <div class="success-field"><span style="color:var(--text3)">Payment</span><span style="font-family:var(--mono)">Razorpay Test · CONFIRMED</span></div>
+    <div class="success-field"><span style="color:var(--text3)">Mandate</span><span style="font-family:var(--mono)">M-9A4F-22B1 · UTILIZED</span></div>
+  </div>
+  <div style="font-size:12px;color:var(--text2);margin-top:10px">Order confirmed and receipt logged to audit trail. 🎉</div>
+  </div></div>`;
+  msgs().appendChild(row);scrollMsgs();launchConfetti();
+}
+
+async function doPaymentFailure(){
+  cs=STATE.PAYMENT_FAILURE;
+  addAudit('ERROR','Payment provider timeout. Razorpay Test Mode.');
+  addAudit('FAIL','Payment failed. Cart preserved. Rollback initiated.');
+  addAudit('DB_SYNC','Failure logged. Cart state saved to PostgreSQL.');
+  const row=document.createElement('div');row.className='msg-row';
+  row.innerHTML=`<div class="msg-avatar ag-av">A1</div><div class="msg-bubble"><div class="msg-sender">Agent 1 — Negotiator</div>
+  <div class="failure-banner"><div style="font-size:22px;margin-bottom:8px">⚠️</div><div class="failure-title">Payment Provider Unavailable</div>
+  <div class="failure-desc">The Razorpay Test gateway timed out after 2,200ms. <strong>Your cart has been preserved</strong> and the failure logged to the audit trail. No charges were made.</div>
+  <div class="failure-cart">Cart ID: CART-9A4F-preserved · Total: ₹4,700.00</div>
+  <div><button class="btn-retry" onclick="retryPayment()">↺ Retry Payment</button><button class="btn-save-exit">Save &amp; Exit</button></div>
+  </div></div>`;
+  msgs().appendChild(row);scrollMsgs();
+}
+
+async function retryPayment(){
+  cs=STATE.PAYMENT_MODAL;
+  const pmRow=document.createElement('div');pmRow.className='msg-row';
+  pmRow.innerHTML=`<div class="msg-avatar ag-av">A1</div><div class="msg-bubble"><div class="msg-sender">Agent 1 — Negotiator</div>
+  <div class="payment-card">
+    <div style="font-size:13px;font-weight:700;margin-bottom:4px">💳 Retry Payment</div>
+    <div class="payment-test-note">⚠ Failure toggle is ${failureMode?'ON (will fail)':'OFF (will succeed)'}</div>
+    <div class="payment-field"><span class="pf-key">Amount</span><span class="pf-val">₹4,700.00</span></div>
+    <div class="payment-field"><span class="pf-key">Cart</span><span class="pf-val">CART-9A4F-preserved</span></div>
+    <button id="btn-pay-action" class="btn-pay" onclick="doPayment()">Retry Pay ₹4,700 (Test)</button>
+  </div></div>`;
+  msgs().appendChild(pmRow);scrollMsgs();
+}
+
+function resetDemo(){
+  cs=STATE.IDLE;failureMode=false;auditCount=0;expirySeconds=86399;chatInitialized=false;cartBase=0;cartSKUs=[];upsellAdded=[];
+  if(expiryInterval){clearInterval(expiryInterval);expiryInterval=null;}
+  const m=document.getElementById('messages');if(m)m.innerHTML='';
+  const ae=document.getElementById('audit-entries');if(ae)ae.innerHTML='';
+  const ac=document.getElementById('audit-count');if(ac)ac.textContent='0';
+  document.getElementById('mandate-inactive-lp').style.display='block';
+  document.getElementById('mandate-active-lp').style.display='none';
+  document.getElementById('vc-active-badge').style.display='none';
+  document.getElementById('mandate-card').classList.remove('highlighted');
+  document.getElementById('auth-ctx-card').classList.remove('highlighted');
+  const et=document.getElementById('expiry-timer');if(et)et.textContent='23:59:59';
+  const sb=document.getElementById('spend-bar');if(sb)sb.style.width='0%';
+  const sa=document.getElementById('spend-auth');if(sa)sa.textContent='₹0 authorized';
+  const sp=document.getElementById('spend-pct');if(sp)sp.textContent='0% UTILIZED';
+  document.getElementById('ctx-sess-time').textContent='--:--:--.---';
+  document.getElementById('ctx-user-time').textContent='--:--:--.---';
+  document.getElementById('ctx-sess-desc').textContent='Awaiting session start...';
+  document.getElementById('ctx-user-desc').textContent='No user action yet...';
+  document.getElementById('failure-toggle').classList.remove('on');
+  setSdot(false,'Initializing...');
+  startChat();
+}
+
+// Confetti
+function launchConfetti(){
+  const wrap=document.getElementById('confetti-wrap');
+  const colors=['#6366f1','#8b5cf6','#10b981','#f59e0b','#ffffff','#38bdf8','#f43f5e'];
+  for(let i=0;i<70;i++){
+    const p=document.createElement('div');p.className='confetti-piece';
+    p.style.cssText=`left:${Math.random()*100}%;top:-10px;background:${colors[~~(Math.random()*colors.length)]};width:${Math.random()*8+4}px;height:${Math.random()*8+4}px;border-radius:${Math.random()>.5?'50%':'2px'};animation:confettiFall ${Math.random()*2+2}s ${Math.random()*1.5}s ease forwards;transform:rotate(${Math.random()*360}deg)`;
+    wrap.appendChild(p);setTimeout(()=>p.remove(),(Math.random()*2+2)*1000+2000);
+  }
+}
+
+// Init mandate countdown
+window.addEventListener('load',()=>{
+  let s=85282;
+  setInterval(()=>{
+    s=Math.max(0,s-1);const t=fmtTimer(s);
+    const mc=document.getElementById('mandate-countdown'),sc=document.getElementById('sec-countdown');
+    if(mc)mc.textContent=t;if(sc)sc.textContent=t;
+  },1000);
+});
+</script>
+</body>
+</html>
